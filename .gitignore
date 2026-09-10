@@ -1,0 +1,54 @@
+# Environments
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.zip
+*.tar.gz
+
+# Local binaries & runtime logs
+bin/
+*.exe
+tunnel_url.txt
+*.log
+*.tmp
+*.bak
+
+# Downloaded music & runtime data
+downloads/
+Spotify Downloads/
+test_output/
+*.mp3
+*.m4a
+*.flac
+*.opus
+*.ogg
+*.wav
+*.m3u8
+
+# User / Environment Secrets & Configs
+.env
+.env.local
+.env.*.local
+
+# IDE & OS files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini

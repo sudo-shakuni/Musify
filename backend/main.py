@@ -1,0 +1,317 @@
+"""
+FastAPI Server for Spotify Playlist Cloner & Downloader.
+Exposes REST and SSE endpoints for metadata inspection, download orchestration,
+and local system operations.
+"""
+
+import asyncio
+import json
+import os
+import re
+import subprocess
+import sys
+import threading
+import webbrowser
+from typing import Any, Dict, List, Optional
+
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
+
+# Ensure parent path in sys.path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from backend.downloader import download_manager, open_folder_in_explorer
+from backend.spotify_meta import fetch_metadata
+from setup_ffmpeg import ensure_ffmpeg
+
+
+app = FastAPI(title="Spotify Playlist Cloner & Downloader")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+
+PUBLIC_TUNNEL_URL: Optional[str] = None
+_TUNNEL_PROCESS: Optional[subprocess.Popen] = None
+
+
+def start_cloudflare_tunnel():
+    global PUBLIC_TUNNEL_URL, _TUNNEL_PROCESS
+    if _TUNNEL_PROCESS is not None:
+        return
+
+    cloudflared_bin = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "bin", "cloudflared.exe")
+    if not os.path.exists(cloudflared_bin):
+        import shutil
+        cloudflared_bin = shutil.which("cloudflared") or cloudflared_bin
+
+    if not os.path.exists(cloudflared_bin):
+        return
+
+    def run_tunnel():
+        global PUBLIC_TUNNEL_URL, _TUNNEL_PROCESS
+        try:
+            cmd = [cloudflared_bin, "tunnel", "--url", "http://127.0.0.1:8800"]
+            _TUNNEL_PROCESS = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+            )
+            for line in _TUNNEL_PROCESS.stdout:
+                m = re.search(r"https://[a-zA-Z0-9-]+\.trycloudflare\.com", line)
+                if m:
+                    PUBLIC_TUNNEL_URL = m.group(0)
+                    print(f"\n=======================================================")
+                    print(f" 🌐 PUBLIC CLOUDFLARE DOMAIN LIVE: {PUBLIC_TUNNEL_URL}")
+                    print(f"=======================================================\n")
+                    try:
+                        with open("tunnel_url.txt", "w", encoding="utf-8") as f:
+                            f.write(PUBLIC_TUNNEL_URL)
+                    except Exception:
+                        pass
+        except Exception as e:
+            print(f"[Cloudflare Tunnel] Error: {e}")
+
+    t = threading.Thread(target=run_tunnel, daemon=True)
+    t.start()
+
+
+# Cloudflare tunnel is optional and NOT started automatically
+# Only manual invocation if explicitly requested
+
+
+class PlaylistRequest(BaseModel):
+    url: str
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
+
+
+class DownloadOptions(BaseModel):
+    output_dir: Optional[str] = None
+    audio_format: str = "mp3"
+    bitrate: str = "320"
+    filename_format: str = "{artist} - {title}"
+    create_m3u8: bool = True
+    overwrite: bool = False
+    concurrency: int = 3
+    embed_artwork: bool = True
+
+
+class DownloadStartRequest(BaseModel):
+    playlist_title: str
+    tracks: List[Dict[str, Any]]
+    options: DownloadOptions
+
+
+class OpenFolderRequest(BaseModel):
+    path: str
+
+
+class SelectFolderRequest(BaseModel):
+    initial_dir: Optional[str] = None
+
+
+@app.get("/api/system/info")
+def get_system_info():
+    """Returns system status, default music directory, and FFmpeg verification."""
+    ffmpeg_bin, _ = ensure_ffmpeg()
+    user_music = os.path.join(os.path.expanduser("~"), "Music", "Spotify Downloads")
+    os.makedirs(user_music, exist_ok=True)
+
+    return {
+        "os": sys.platform,
+        "default_music_dir": user_music,
+        "ffmpeg_path": ffmpeg_bin,
+        "ffmpeg_ready": bool(ffmpeg_bin and os.path.exists(ffmpeg_bin)),
+        "public_url": PUBLIC_TUNNEL_URL,
+    }
+
+
+@app.post("/api/playlist/info")
+def get_playlist_info(req: PlaylistRequest):
+    """Fetches full playlist metadata and track list from Spotify URL."""
+    print(f"\n[Spotify Cloner] Loading URL: {req.url}")
+    try:
+        data = fetch_metadata(req.url, req.client_id, req.client_secret)
+        print(f"[Spotify Cloner] SUCCESS: Retrieved {len(data.get('tracks', []))} tracks for '{data.get('title')}'")
+        return data
+    except Exception as e:
+        print(f"[Spotify Cloner] ERROR: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/download/start")
+async def start_download(req: DownloadStartRequest):
+    """Initiates downloading and metadata tagging of selected tracks."""
+    if not req.tracks:
+        raise HTTPException(status_code=400, detail="No tracks selected for download.")
+
+    loop = asyncio.get_event_loop()
+    download_manager.start_download_job(
+        playlist_title=req.playlist_title,
+        tracks=req.tracks,
+        options=req.options.model_dump() if hasattr(req.options, "model_dump") else req.options.dict(),
+        loop=loop,
+    )
+    return {"status": "started", "total": len(req.tracks)}
+
+
+@app.post("/api/download/cancel")
+def cancel_download():
+    """Cancels active downloads."""
+    download_manager.cancel_current_job()
+    return {"status": "cancelled"}
+
+
+@app.get("/api/download/status")
+def get_download_status():
+    """Returns status snapshot of current job."""
+    return download_manager.active_job or {"status": "idle"}
+
+
+@app.get("/api/download/stream")
+async def stream_download_events(request: Request):
+    """Server-Sent Events (SSE) endpoint for live track download and tagging progress."""
+    queue = asyncio.Queue()
+    download_manager.subscribers.append(queue)
+
+    async def event_generator():
+        try:
+            # Yield initial snapshot if job active
+            if download_manager.active_job:
+                yield f"data: {json.dumps({'type': 'init', 'data': download_manager.active_job})}\n\n"
+
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    payload = await asyncio.wait_for(queue.get(), timeout=1.0)
+                    yield f"data: {json.dumps(payload)}\n\n"
+                except asyncio.TimeoutError:
+                    # Keep-alive heartbeat
+                    yield ": ping\n\n"
+        finally:
+            if queue in download_manager.subscribers:
+                download_manager.subscribers.remove(queue)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
+
+
+@app.post("/api/open-folder")
+def open_folder(req: OpenFolderRequest):
+    """Opens folder in Windows Explorer."""
+    success = open_folder_in_explorer(req.path)
+    return {"success": success}
+
+
+@app.post("/api/system/select-folder")
+def select_folder(req: SelectFolderRequest):
+    """Opens a native Windows directory picker dialog."""
+    def run_dialog():
+        try:
+            import tkinter as tk
+            from tkinter import filedialog
+            root = tk.Tk()
+            root.withdraw()
+            root.attributes("-topmost", True)
+            initial = req.initial_dir if (req.initial_dir and os.path.exists(req.initial_dir)) else os.path.expanduser("~")
+            folder = filedialog.askdirectory(initialdir=initial, title="Select Download Destination Folder")
+            root.destroy()
+            return folder if folder else None
+        except Exception as e:
+            print(f"[Error selecting folder via Tkinter] {e}", file=sys.stderr)
+            return None
+
+    import concurrent.futures
+    try:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            future = executor.submit(run_dialog)
+            selected = future.result(timeout=60)
+        return {"selected_dir": selected, "success": bool(selected)}
+    except concurrent.futures.TimeoutError:
+        return {"selected_dir": None, "success": False, "message": "Folder selection dialog timed out"}
+    except Exception as e:
+        return {"selected_dir": None, "success": False, "message": str(e)}
+
+
+@app.get("/api/audio/stream")
+def stream_audio_file(path: str):
+    """Streams a downloaded local audio file so it can be previewed directly in the browser."""
+    if not path:
+        raise HTTPException(status_code=400, detail="Path parameter is required.")
+
+    # Resolve absolute path and normalize
+    abs_path = os.path.abspath(path)
+    if not os.path.exists(abs_path) or not os.path.isfile(abs_path):
+        raise HTTPException(status_code=404, detail="Audio file not found.")
+
+    # Only allow safe audio extensions
+    ext = os.path.splitext(abs_path)[1].lower()
+    allowed_exts = {".mp3", ".m4a", ".flac", ".opus", ".ogg", ".wav"}
+    if ext not in allowed_exts:
+        raise HTTPException(status_code=403, detail="Forbidden: Not a supported audio file.")
+
+    # Validate file path is within user home directory or project directory
+    user_home = os.path.abspath(os.path.expanduser("~"))
+    proj_root = os.path.abspath(PROJECT_ROOT)
+    try:
+        common_home = os.path.commonpath([abs_path, user_home])
+        common_proj = os.path.commonpath([abs_path, proj_root])
+        if common_home != user_home and common_proj != proj_root:
+            raise HTTPException(status_code=403, detail="Access denied: File outside authorized storage boundaries.")
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=403, detail="Access denied: Path validation error.")
+
+    media_types = {
+        ".mp3": "audio/mpeg",
+        ".m4a": "audio/mp4",
+        ".flac": "audio/flac",
+        ".opus": "audio/ogg",
+        ".ogg": "audio/ogg",
+        ".wav": "audio/wav",
+    }
+    media_type = media_types.get(ext, "application/octet-stream")
+    return FileResponse(abs_path, media_type=media_type, filename=os.path.basename(abs_path))
+
+
+# Serve Frontend static assets
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
+
+    @app.get("/")
+    def serve_ui():
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+
+if __name__ == "__main__":
+    import uvicorn
+    ensure_ffmpeg()
+    port = 8800
+    print(f"\n=======================================================")
+    print(f" Spotify Playlist Cloner & Downloader")
+    print(f" Running at: http://localhost:{port}")
+    print(f"=======================================================\n")
+    # Open browser automatically
+    threading.Timer(1.2, lambda: webbrowser.open(f"http://localhost:{port}")).start()
+    uvicorn.run(app, host="127.0.0.1", port=port)

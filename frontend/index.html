@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spotify Playlist Cloner & Downloader</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Navigation Bar -->
+    <header class="navbar">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="28" height="28" fill="#1DB954">
+            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.37-.73.49-1.1.25-3.01-1.84-6.8-2.26-11.26-1.24-.42.1-.84-.16-.94-.58-.1-.42.16-.84.58-.94 4.88-1.12 9.07-.64 12.47 1.41.37.24.49.73.25 1.1zm1.48-3.31c-.3.46-.92.61-1.38.31-3.46-2.13-8.73-2.75-12.82-1.51-.52.16-1.07-.14-1.23-.66-.16-.52.14-1.07.66-1.23 4.67-1.42 10.49-.72 14.46 1.71.46.3.61.92.31 1.38zm.13-3.45C15.02 8.35 8.24 8.12 4.3 9.32c-.63.19-1.3-.17-1.49-.8-.19-.63.17-1.3.8-1.49 4.54-1.38 12.01-1.11 16.66 1.65.57.34.76 1.08.42 1.65-.34.57-1.08.76-1.65.42z"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Spotify Cloner</span>
+          <span class="brand-badge">PRO METADATA</span>
+        </div>
+      </div>
+
+      <div class="nav-status">
+        <div id="public-url-badge" class="status-pill ready hidden" title="Public domain accessible from any device">
+          <i data-lucide="globe"></i>
+          <span id="public-url-text">Public Domain Live</span>
+          <button type="button" id="btn-copy-public-url" class="btn-text-action" title="Copy Public URL">Copy</button>
+        </div>
+        <div id="ffmpeg-badge" class="status-pill">
+          <span class="status-dot"></span>
+          <span id="ffmpeg-status-text">Checking FFmpeg Engine...</span>
+        </div>
+        <button id="btn-settings-toggle" class="btn-icon" title="Preferences" aria-label="Preferences">
+          <i data-lucide="settings"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      
+      <!-- Input Section -->
+      <section class="search-section">
+        <!-- Auto-Detected Clipboard Banner -->
+        <div id="clipboard-banner" class="clipboard-banner card hidden">
+          <div class="clipboard-banner-left">
+            <i data-lucide="sparkles" class="clipboard-icon"></i>
+            <div class="clipboard-banner-text-col">
+              <span class="clipboard-title">Spotify link detected in clipboard</span>
+              <span id="clipboard-url-preview" class="clipboard-url"></span>
+            </div>
+          </div>
+          <div class="clipboard-banner-actions">
+            <button type="button" id="btn-clipboard-load" class="btn btn-primary btn-sm">
+              <i data-lucide="arrow-down-circle"></i> Load Playlist
+            </button>
+            <button type="button" id="btn-clipboard-dismiss" class="btn-icon btn-sm" title="Dismiss" aria-label="Dismiss notification">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="search-box-card">
+          <h1 class="search-headline">Clone & Download Any Spotify Playlist</h1>
+          <p class="search-subhead">Studio-quality audio downloads with authentic ID3 tags, artist credits, album artwork, and .m3u8 playlist file.</p>
+          
+          <form id="fetch-form" class="url-input-container">
+            <div class="input-wrapper">
+              <i data-lucide="link" class="input-icon"></i>
+              <input 
+                type="text" 
+                id="playlist-url" 
+                placeholder="Paste Spotify playlist, album, or track URL (e.g. https://open.spotify.com/playlist/...)"
+                autocomplete="off"
+                aria-label="Spotify playlist, album, or track URL"
+                required
+              />
+              <button type="button" id="btn-paste-clipboard" class="btn-input-action" title="Paste Spotify URL from Clipboard">
+                <i data-lucide="clipboard"></i> Paste
+              </button>
+              <button type="button" id="btn-clear-url" class="btn-clear hidden" title="Clear">
+                <i data-lucide="x"></i>
+              </button>
+            </div>
+            <button type="submit" id="btn-fetch" class="btn btn-primary">
+              <span class="btn-text">Load Playlist</span>
+              <div class="spinner hidden" id="fetch-spinner"></div>
+            </button>
+          </form>
+
+          <div class="quick-examples">
+            <span>Quick samples:</span>
+            <button type="button" class="btn-chip" data-url="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M">🔥 Today's Top Hits</button>
+            <button type="button" class="btn-chip" data-url="https://open.spotify.com/album/4m2880jivSbbyEGAKfITCa">💿 Daft Punk - RAM</button>
+            <button type="button" class="btn-chip" data-url="https://open.spotify.com/playlist/37i9dQZF1DX4t95PaoR1T0">☕ Chill Lofi Beats</button>
+          </div>
+
+          <!-- Recent Playlists History -->
+          <div id="recent-section" class="recent-section hidden">
+            <div class="recent-header">
+              <span class="recent-title"><i data-lucide="history"></i> Recent Playlists</span>
+              <button type="button" id="btn-clear-recent" class="btn-text-action">Clear History</button>
+            </div>
+            <div id="recent-grid" class="recent-grid">
+              <!-- Dynamically populated from localStorage -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Preferences / Settings Panel (Collapsible) -->
+      <section id="settings-panel" class="settings-panel card hidden">
+        <div class="settings-header">
+          <h3><i data-lucide="sliders"></i> Download Preferences</h3>
+          <button id="btn-close-settings" class="btn-icon" title="Close Settings" aria-label="Close Settings"><i data-lucide="x"></i></button>
+        </div>
+        <div class="settings-grid">
+          <div class="form-group">
+            <label for="setting-outdir">Download Directory</label>
+            <div class="dir-picker-row">
+              <input type="text" id="setting-outdir" placeholder="Loading default..." />
+              <button type="button" id="btn-browse-folder" class="btn btn-secondary" title="Pick destination folder with Windows dialog">
+                <i data-lucide="folder-search"></i> Change...
+              </button>
+              <button type="button" id="btn-open-dir" class="btn btn-secondary" title="Reveal in Windows Explorer">
+                <i data-lucide="folder-open"></i> Open
+              </button>
+            </div>
+            <small>Tracks and playlist files will be saved in subfolders here.</small>
+          </div>
+
+          <div class="form-group">
+            <label for="setting-format">Audio Format</label>
+            <select id="setting-format">
+              <option value="mp3" selected>MP3 (Universal compatibility)</option>
+              <option value="m4a">M4A / AAC (Apple & Mobile friendly)</option>
+              <option value="flac">FLAC (Lossless Source)</option>
+              <option value="opus">OPUS (Modern & efficient)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="setting-bitrate">Audio Bitrate</label>
+            <select id="setting-bitrate">
+              <option value="320" selected>320 kbps (Maximum Quality)</option>
+              <option value="256">256 kbps (High Quality)</option>
+              <option value="192">192 kbps (Standard Quality)</option>
+              <option value="128">128 kbps (Compact)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="setting-naming">File Naming Scheme</label>
+            <select id="setting-naming">
+              <option value="{artist} - {title}" selected>Artist - Song Title.mp3</option>
+              <option value="{track_number} - {artist} - {title}">01 - Artist - Song Title.mp3</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="setting-concurrency">Concurrent Downloads</label>
+            <select id="setting-concurrency">
+              <option value="1">1 track at a time (Sequential)</option>
+              <option value="2">2 tracks at a time</option>
+              <option value="3" selected>3 tracks at a time (Recommended & Safe)</option>
+              <option value="4">4 tracks at a time (Fast)</option>
+              <option value="5">5 tracks at a time (Very Fast)</option>
+              <option value="6">6 tracks at a time (Ultra Fast)</option>
+            </select>
+            <small>Safely downloads multiple songs simultaneously with high-speed chunking and rate-limit protection.</small>
+          </div>
+        </div>
+
+        <div class="settings-toggles">
+          <label class="checkbox-label">
+            <input type="checkbox" id="toggle-m3u8" checked>
+            <span>Create <code>.m3u8</code> playlist file (clones order for media players)</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="toggle-artwork" checked>
+            <span>Embed full-resolution album artwork into audio files</span>
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" id="toggle-overwrite">
+            <span>Overwrite already downloaded files</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- Skeleton Shimmer Loading Placeholder -->
+      <section id="skeleton-section" class="skeleton-section card hidden">
+        <div class="skeleton-header">
+          <div class="skeleton-box skeleton-cover shimmer"></div>
+          <div class="skeleton-meta">
+            <div class="skeleton-box skeleton-badge shimmer"></div>
+            <div class="skeleton-box skeleton-title shimmer"></div>
+            <div class="skeleton-box skeleton-desc shimmer"></div>
+            <div class="skeleton-box skeleton-meta-row shimmer"></div>
+          </div>
+        </div>
+        <div class="skeleton-tracks">
+          <div class="skeleton-row shimmer"></div>
+          <div class="skeleton-row shimmer"></div>
+          <div class="skeleton-row shimmer"></div>
+          <div class="skeleton-row shimmer"></div>
+          <div class="skeleton-row shimmer"></div>
+        </div>
+      </section>
+
+      <!-- Playlist Preview & Track List Section -->
+      <section id="playlist-section" class="playlist-section hidden">
+        
+        <!-- Playlist Banner Header -->
+        <div class="playlist-header card">
+          <div class="playlist-cover-wrapper">
+            <img id="pl-cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Cover Artwork" class="playlist-cover" />
+            <div class="cover-overlay">
+              <i data-lucide="music"></i>
+            </div>
+          </div>
+          
+          <div class="playlist-info">
+            <span id="pl-type" class="pl-type-badge">PLAYLIST</span>
+            <h2 id="pl-title" class="pl-title">Playlist Title</h2>
+            <p id="pl-desc" class="pl-desc">Curator description</p>
+            
+            <div class="pl-meta">
+              <span class="author"><i data-lucide="user"></i> <strong id="pl-author">Spotify</strong></span>
+              <span class="separator">•</span>
+              <span class="count"><i data-lucide="list-music"></i> <strong id="pl-count">0</strong> songs</span>
+              <span class="separator">•</span>
+              <span class="duration"><i data-lucide="clock"></i> <span id="pl-duration">0 min</span></span>
+            </div>
+
+            <!-- Quick Quality Switcher Pills -->
+            <div class="quick-quality-bar">
+              <span class="quick-quality-label"><i data-lucide="sparkles"></i> Quality:</span>
+              <div class="quality-pills" id="quality-pills">
+                <button type="button" class="pill-btn active" data-format="mp3" data-bitrate="320">MP3 320k</button>
+                <button type="button" class="pill-btn" data-format="m4a" data-bitrate="256">M4A 256k</button>
+                <button type="button" class="pill-btn" data-format="flac" data-bitrate="320">FLAC Lossless</button>
+                <button type="button" class="pill-btn" data-format="opus" data-bitrate="256">OPUS High</button>
+              </div>
+            </div>
+
+            <div class="pl-actions">
+              <button id="btn-start-download" class="btn btn-success btn-large">
+                <i data-lucide="download"></i>
+                <span id="download-btn-label">Download All (0 tracks)</span>
+              </button>
+
+              <button id="btn-retry-failed" class="btn btn-warning hidden" title="Retry downloading failed tracks">
+                <i data-lucide="refresh-cw"></i> Retry Failed (<span id="pl-failed-count">0</span>)
+              </button>
+              
+              <button id="btn-open-folder" class="btn btn-secondary" title="Open Destination Folder">
+                <i data-lucide="folder"></i> Open Folder
+              </button>
+
+              <div class="select-controls">
+                <button type="button" id="btn-select-all" class="btn-text-action">Select All</button>
+                <span class="separator">|</span>
+                <button type="button" id="btn-deselect-all" class="btn-text-action">Deselect All</button>
+                <span class="separator">|</span>
+                <button type="button" id="btn-invert-select" class="btn-text-action">Invert</button>
+                <span class="selection-pill" id="selection-summary-pill">0 selected</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- In-Playlist Search & Filter Bar -->
+        <div class="filter-controls-bar">
+          <div class="filter-input-wrapper">
+            <i data-lucide="search" class="filter-icon"></i>
+            <input 
+              type="text" 
+              id="track-filter-input" 
+              placeholder="Filter songs by title, artist, or album..." 
+              autocomplete="off" 
+              aria-label="Filter songs by title, artist, or album"
+            />
+            <button type="button" id="btn-clear-filter" class="btn-clear hidden" title="Clear filter" aria-label="Clear song filter">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+          <div class="filter-quick-chips" id="filter-quick-chips">
+            <button type="button" class="filter-chip active" data-filter="all">All (<span id="chip-all-count">0</span>)</button>
+            <button type="button" class="filter-chip" data-filter="selected">Selected (<span id="chip-selected-count">0</span>)</button>
+            <button type="button" class="filter-chip" data-filter="unselected">Unselected (<span id="chip-unselected-count">0</span>)</button>
+            <button type="button" class="filter-chip" data-filter="downloaded">Downloaded (<span id="chip-done-count">0</span>)</button>
+            <button type="button" class="filter-chip" data-filter="failed">Failed (<span id="chip-failed-count">0</span>)</button>
+          </div>
+          <div class="filter-stats">
+            <span id="filter-counter" class="filter-counter-badge">Showing all songs</span>
+          </div>
+        </div>
+
+        <!-- Tracks Table -->
+        <div class="tracks-card card">
+          <div class="tracks-table-header">
+            <div class="col-check">
+              <input type="checkbox" id="check-all" checked title="Toggle all" aria-label="Select or deselect all tracks" />
+            </div>
+            <div class="col-num">#</div>
+            <div class="col-title">Title & Artist</div>
+            <div class="col-album">Album</div>
+            <div class="col-dur"><i data-lucide="clock"></i></div>
+            <div class="col-actions">Get</div>
+            <div class="col-status">Status</div>
+          </div>
+
+          <div id="tracks-list" class="tracks-list">
+            <!-- Dynamically populated rows -->
+          </div>
+
+          <div id="tracks-sentinel" class="tracks-sentinel hidden">
+            <button type="button" id="btn-load-more" class="btn btn-secondary btn-sm">
+              <i data-lucide="chevrons-down"></i> Load More Tracks...
+            </button>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+
+    <!-- Expandable Live Queue Drawer -->
+    <div id="queue-drawer" class="queue-drawer card hidden">
+      <div class="queue-header">
+        <div class="queue-heading">
+          <i data-lucide="layers"></i>
+          <span>Active Download Stream</span>
+          <span class="queue-badge" id="queue-active-count">0 active</span>
+        </div>
+        <button type="button" id="btn-close-queue" class="btn-icon" title="Hide Queue" aria-label="Close Live Queue Drawer"><i data-lucide="chevron-down"></i></button>
+      </div>
+      <div id="queue-items-container" class="queue-items-container">
+        <div class="queue-empty" id="queue-empty-msg">No active downloads in flight</div>
+      </div>
+    </div>
+
+    <!-- Floating Live Download Bar -->
+    <footer id="download-bar" class="download-bar hidden">
+      <div class="bar-content">
+        <div class="bar-left">
+          <div class="pulse-indicator"></div>
+          <div class="bar-details">
+            <div class="bar-title">
+              <span id="bar-status-text">Downloading tracks...</span>
+              <span id="bar-progress-text" class="bar-counter">0 / 0 (0%)</span>
+            </div>
+            <div class="bar-metrics-row">
+              <span id="bar-speed" class="bar-metric"><i data-lucide="zap"></i> <span id="bar-speed-val">0 KB/s</span></span>
+              <span class="bar-metric-sep">•</span>
+              <span id="bar-eta" class="bar-metric"><i data-lucide="timer"></i> <span id="bar-eta-val">Calculating...</span></span>
+              <span class="bar-metric-sep">•</span>
+              <span id="bar-streams" class="bar-metric"><i data-lucide="layers"></i> <span id="bar-streams-val">3 active</span></span>
+            </div>
+            <div class="progress-track">
+              <div id="bar-progress-fill" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="bar-right">
+          <button id="btn-bar-toggle-queue" class="btn btn-secondary btn-sm" title="Toggle Live Queue">
+            <i data-lucide="layers"></i> Queue (<span id="btn-queue-count">0</span>)
+          </button>
+          <button id="btn-bar-open-folder" class="btn btn-secondary btn-sm" title="Open Destination Folder">
+            <i data-lucide="folder"></i> Show in Explorer
+          </button>
+          <button id="btn-bar-cancel" class="btn btn-danger btn-sm" title="Cancel Active Downloads">
+            <i data-lucide="x-circle"></i> Cancel
+          </button>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Floating Audio Preview Mini-Player -->
+    <div id="mini-player" class="mini-player card hidden">
+      <div class="mini-player-track">
+        <img id="mp-cover" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E" alt="Cover" class="mp-cover" />
+        <div class="mp-details">
+          <div class="mp-title-row">
+            <span id="mp-title" class="mp-title">Song Title</span>
+            <span id="mp-quality-badge" class="badge-status queued">Preview (30s)</span>
+          </div>
+          <div id="mp-artist" class="mp-artist">Artist Name</div>
+        </div>
+      </div>
+      <div class="mp-center-controls">
+        <button id="mp-btn-play" class="btn-icon btn-mp-play" aria-label="Play or Pause"><i data-lucide="pause"></i></button>
+        <div class="mp-timeline">
+          <span id="mp-current-time" class="mp-time">0:00</span>
+          <div class="mp-progress-bar" id="mp-progress-bar">
+            <div id="mp-progress-fill" class="mp-progress-fill" style="width: 0%"></div>
+          </div>
+          <span id="mp-total-time" class="mp-time">0:30</span>
+        </div>
+      </div>
+      <div class="mp-right-controls">
+        <div class="equalizer-bars" id="equalizer-bars">
+          <span></span><span></span><span></span><span></span>
+        </div>
+        <button id="mp-btn-mute" class="btn-icon" title="Mute / Unmute" aria-label="Mute or Unmute"><i data-lucide="volume-2"></i></button>
+        <input type="range" id="mp-volume" min="0" max="1" step="0.05" value="0.8" class="mp-slider" title="Volume" aria-label="Audio Volume" />
+        <button id="mp-btn-close" class="btn-icon" title="Close Preview" aria-label="Close Preview Player"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+
+    <!-- Download Completion Celebration Modal -->
+    <div id="completion-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-card card">
+        <div class="modal-icon-success">
+          <i data-lucide="check-circle-2"></i>
+        </div>
+        <h2 id="modal-title" class="modal-title">Downloads Complete!</h2>
+        <p id="modal-summary-text" class="modal-desc">All selected tracks have been downloaded with metadata and high-res cover art.</p>
+        
+        <div class="modal-stats-grid">
+          <div class="modal-stat">
+            <span class="stat-num" id="modal-stat-count">0</span>
+            <span class="stat-label">Tracks Saved</span>
+          </div>
+          <div class="modal-stat">
+            <span class="stat-num" id="modal-stat-time">0s</span>
+            <span class="stat-label">Total Time</span>
+          </div>
+          <div class="modal-stat">
+            <span class="stat-num" id="modal-stat-failures">0</span>
+            <span class="stat-label">Failed</span>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button id="btn-modal-retry-failed" class="btn btn-warning btn-large hidden">
+            <i data-lucide="refresh-cw"></i> Retry Failed Tracks (<span id="modal-failed-count">0</span>)
+          </button>
+          <button id="btn-modal-open-folder" class="btn btn-success btn-large">
+            <i data-lucide="folder-open"></i> Open Music Folder
+          </button>
+          <button id="btn-modal-close" class="btn btn-secondary">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Audio Player Preview (Hidden) -->
+    <audio id="audio-preview-player" preload="none"></audio>
+
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+fastapi>=0.103.0
+uvicorn>=0.23.0
+pydantic>=2.0
+spotdl>=4.5.0
+yt-dlp>=2026.08.0
+mutagen>=1.48.0
+requests>=2.32.0
+static-ffmpeg>=3.0
+spotapi>=1.2.8
+pywebview>=5.0
