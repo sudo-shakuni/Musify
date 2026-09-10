@@ -5,6 +5,7 @@
 # 🎵 Musify
 ### Studio-Grade Music & Playlist Downloader with Pro ID3 Tagging
 
+[![Release](https://img.shields.io/github/v/release/sudo-shakuni/Musify?style=for-the-badge&color=1db954&logo=github)](https://github.com/sudo-shakuni/Musify/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-1db954.svg?style=for-the-badge)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.103+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -14,6 +15,13 @@
 <br />
 
 <img src="assets/hero_banner.jpg" alt="Musify Desktop App Hero Banner" width="100%" style="border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,0.8);" />
+
+<p align="center">
+  <br />
+  <a href="https://github.com/sudo-shakuni/Musify/releases/latest/download/Musify-v1.0.0-Windows.zip">
+    <img src="https://img.shields.io/badge/⬇️_DOWNLOAD_WINDOWS_PORTABLE-v1.0.0_(ZIP)-1db954?style=for-the-badge&logo=windows&logoColor=white" height="42" alt="Download Windows Release" />
+  </a>
+</p>
 
 <p align="center">
   <b>Musify</b> is an ultra-fast, zero-cost desktop & web application designed to clone and download Spotify playlists, albums, and tracks in studio-grade audio quality (up to 320 kbps MP3 & lossless FLAC) with authentic metadata, high-resolution cover art, and sequence-accurate <code>.m3u8</code> playlist cloning.
@@ -143,6 +151,22 @@ Access Musify at `http://localhost:8800`.
 
 ---
 
+## 📊 Feature Comparison: Why Musify?
+
+| Feature | 🎵 Musify | SpotDL CLI | Online Web Converters | Audacity Recorder |
+|---|:---:|:---:|:---:|:---:|
+| **Zero Paid API Keys** | ✅ Public Embeds | ⚠️ Requires Spotify Dev App | ✅ Free / Ad-heavy | N/A |
+| **Authentic ID3 Tags** | ✅ Full Mutagen | ✅ Mutagen | ❌ Often missing/scrambled | ❌ Manual typing |
+| **High-Res Album Art** | ✅ Embedded HD | ✅ Embedded | ❌ Compressed/Blurry | ❌ None |
+| **`.m3u8` Playlist Order** | ✅ Sequence Cloned | ❌ Scrambled order | ❌ None | ❌ None |
+| **Native Desktop UI** | ✅ 60 FPS Dark UI | ❌ Terminal only | ⚠️ Cluttered with Ads | ⚠️ Complex DAW |
+| **In-App HQ Audio Player** | ✅ Waveform Streaming | ❌ None | ❌ None | ⚠️ Playback only |
+| **Shift-Click Range Select** | ✅ Instant multi-select | ❌ None | ❌ None | ❌ None |
+| **1-Click Retry Failed** | ✅ Auto-isolated | ❌ Must re-run all | ❌ Manual retry | ❌ None |
+| **Clipboard Auto-Detect** | ✅ Window Focus Hook | ❌ None | ❌ None | ❌ None |
+
+---
+
 ## 📂 Project Architecture
 
 ```text
@@ -180,6 +204,18 @@ Musify is built with privacy and security at its core:
 - **No external account creation or login credentials.**
 - **Strict path traversal safeguards** on local audio streaming endpoints.
 - **Zero personal identifiable information (PII)** or keys stored in source code.
+
+---
+
+## ⭐ Star History
+
+If you love Musify, please consider giving it a star! It helps the project reach more music enthusiasts.
+
+<div align="center">
+  <a href="https://star-history.com/#sudo-shakuni/Musify&Date">
+    <img src="https://api.star-history.com/svg?repos=sudo-shakuni/Musify&type=Date&theme=dark" alt="Star History Chart" width="750" />
+  </a>
+</div>
 
 ---
 
