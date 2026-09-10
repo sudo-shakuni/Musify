@@ -5,7 +5,7 @@
 # 🎵 Musify
 ### Studio-Grade Music & Playlist Downloader with Pro ID3 Tagging
 
-[![Release](https://img.shields.io/github/v/release/sudo-shakuni/Musify?style=for-the-badge&color=1db954&logo=github)](https://github.com/sudo-shakuni/Musify/releases/latest)
+[![CI](https://github.com/sudo-shakuni/Musify/actions/workflows/ci.yml/badge.svg)](https://github.com/sudo-shakuni/Musify/actions) [![Release](https://img.shields.io/github/v/release/sudo-shakuni/Musify?style=for-the-badge&color=1db954&logo=github)](https://github.com/sudo-shakuni/Musify/releases/latest)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-1db954?style=for-the-badge&logo=google-chrome&logoColor=white)](https://sudo-shakuni.github.io/Musify/) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-1db954.svg?style=for-the-badge)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
@@ -72,6 +72,16 @@
 
 ---
 
+
+### ⚡ Quick 1-Click Install (Windows PowerShell)
+
+Run this single command in PowerShell to automatically download, unpack, and launch Musify with a Desktop shortcut:
+
+```powershell
+irm https://raw.githubusercontent.com/sudo-shakuni/Musify/main/install.ps1 | iex
+```
+
+---
 ## 🚀 Quick Start
 
 ### Windows Desktop (One-Click)

@@ -1,3 +1,103 @@
+
+// --- GITHUB PAGES WEB SHOWCASE MODE ---
+const isWebDemo = window.location.hostname.includes("github.io") || window.location.protocol === "file:";
+
+const DEMO_PLAYLIST_DATA = {
+  id: "demo_top_hits",
+  title: "Musify Showcase: Global Hits & Classics",
+  author: "Musify Curator",
+  description: "Interactive Web Preview! Click play to test audio previews, try filters & selection. To download actual Lossless FLAC/320kbps MP3 files, run the native Windows app!",
+  cover_url: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=600&q=80",
+  total_tracks: 6,
+  total_duration_str: "22m 45s",
+  type: "playlist",
+  tracks: [
+    {
+      id: "demo_1",
+      title: "Blinding Lights",
+      artists: "The Weeknd",
+      album: "After Hours",
+      duration_ms: 200040,
+      duration_str: "3:20",
+      cover_url: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&w=300&q=80",
+      preview_url: "https://actions.google.com/sounds/v1/science_fiction/scifi_pulse.ogg",
+      spotify_url: "https://open.spotify.com/track/0VjIjW4GlUZAMYd2vXMi3b"
+    },
+    {
+      id: "demo_2",
+      title: "Starboy",
+      artists: "The Weeknd, Daft Punk",
+      album: "Starboy",
+      duration_ms: 230453,
+      duration_str: "3:50",
+      cover_url: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&q=80",
+      preview_url: "https://actions.google.com/sounds/v1/science_fiction/deep_hum.ogg",
+      spotify_url: "https://open.spotify.com/track/7MXVkk9YM5IZxh0WSlVIh0"
+    },
+    {
+      id: "demo_3",
+      title: "Levitating",
+      artists: "Dua Lipa",
+      album: "Future Nostalgia",
+      duration_ms: 203808,
+      duration_str: "3:23",
+      cover_url: "https://images.unsplash.com/photo-1470225620780-dba8ba36b745?auto=format&fit=crop&w=300&q=80",
+      preview_url: "https://actions.google.com/sounds/v1/science_fiction/scifi_laser_blast.ogg",
+      spotify_url: "https://open.spotify.com/track/463CkQjx2Zk1yXoBuierM9"
+    },
+    {
+      id: "demo_4",
+      title: "Get Lucky",
+      artists: "Daft Punk, Pharrell Williams",
+      album: "Random Access Memories",
+      duration_ms: 248413,
+      duration_str: "4:08",
+      cover_url: "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=300&q=80",
+      preview_url: "https://actions.google.com/sounds/v1/science_fiction/scifi_flyby.ogg",
+      spotify_url: "https://open.spotify.com/track/2Foc5Q5nqNiosCNqttzHof"
+    },
+    {
+      id: "demo_5",
+      title: "Midnight City",
+      artists: "M83",
+      album: "Hurry Up, We're Dreaming",
+      duration_ms: 243000,
+      duration_str: "4:03",
+      cover_url: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?auto=format&fit=crop&w=300&q=80",
+      preview_url: "https://actions.google.com/sounds/v1/science_fiction/scifi_alarm.ogg",
+      spotify_url: "https://open.spotify.com/track/1eyzqe2QqGZUmfcPZtrIyt"
+    },
+    {
+      id: "demo_6",
+      title: "Resonance",
+      artists: "HOME",
+      album: "Odyssey",
+      duration_ms: 212000,
+      duration_str: "3:32",
+      cover_url: "https://images.unsplash.com/photo-1487180144351-b8472da7d491?auto=format&fit=crop&w=300&q=80",
+      preview_url: "https://actions.google.com/sounds/v1/science_fiction/scifi_synth_chime.ogg",
+      spotify_url: "https://open.spotify.com/track/1Tu2T8y3Wc0pY7s71NzgDq"
+    }
+  ]
+};
+
+function initWebShowcaseMode() {
+  if (!isWebDemo) return;
+  console.log("Musify running in Web Showcase Demo Mode.");
+  
+  if (elements.ffmpegBadge) {
+    elements.ffmpegBadge.className = "status-pill ready";
+    elements.ffmpegStatusText.textContent = "Web Showcase Demo";
+  }
+
+  // Auto-render sample showcase playlist so the web page is visually alive immediately
+  setTimeout(() => {
+    state.currentPlaylist = DEMO_PLAYLIST_DATA;
+    renderPlaylistView(DEMO_PLAYLIST_DATA);
+    showToast("🎉 Welcome to the Musify Web Showcase! Try searching, selecting, and playing previews.", "success", 6000);
+  }, 300);
+}
+
 /**
  * Musify — Music & Playlist Downloader - Modern Frontend Controller
  * Features:
@@ -174,6 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
     window.lucide.createIcons();
   }
   loadSystemInfo();
+  if (isWebDemo) initWebShowcaseMode();
   setupEventListeners();
   setupAudioPlayer();
   setupQualityPills();
@@ -713,6 +814,17 @@ function setLoadingState(isLoading) {
 // Fetch Metadata & Track List from Backend
 async function fetchPlaylistData(url) {
   setLoadingState(true);
+  if (isWebDemo) {
+    showToast("✨ Loading Web Demo Showcase tracks...", "info", 2000);
+    setTimeout(() => {
+      state.currentPlaylist = DEMO_PLAYLIST_DATA;
+      renderPlaylistView(DEMO_PLAYLIST_DATA);
+      setLoadingState(false);
+      showToast('Loaded "' + DEMO_PLAYLIST_DATA.title + '" (Interactive Demo)', "success");
+    }, 400);
+    return;
+  }
+
   try {
     const res = await fetch("/api/playlist/info", {
       method: "POST",
@@ -1316,6 +1428,36 @@ function getDownloadOptions() {
 
 // Start Batch Download Process
 async function startDownloadProcess() {
+  if (isWebDemo) {
+    showToast("🚀 Simulating download process in Web Preview...", "info", 2500);
+    elements.downloadBar.classList.remove("hidden");
+    elements.barProgressFill.style.width = "10%";
+    elements.barProgressText.textContent = "10%";
+    elements.barStatusText.textContent = "Simulating FLAC lossless download...";
+    elements.barSpeedVal.textContent = "⚡ 4.8 MB/s";
+    elements.barEtaVal.textContent = "⏳ ~3s";
+    elements.barStreamsVal.textContent = "4x";
+    
+    setTimeout(() => {
+      elements.barProgressFill.style.width = "65%";
+      elements.barProgressText.textContent = "65%";
+      elements.barStatusText.textContent = "Embedding ID3 metadata & cover art...";
+    }, 1200);
+
+    setTimeout(() => {
+      elements.barProgressFill.style.width = "100%";
+      elements.barProgressText.textContent = "100%";
+      elements.downloadBar.classList.add("hidden");
+      if (elements.completionModal) {
+        elements.completionModal.classList.remove("hidden");
+        elements.modalStatCount.textContent = state.selectedTrackIds.size || 6;
+        elements.modalStatTime.textContent = "3.2s";
+        elements.modalSummaryText.textContent = "Web Preview Simulation Complete! To download actual Lossless FLAC files locally, get the Musify Windows App.";
+      }
+    }, 2800);
+    return;
+  }
+
   if (!state.currentPlaylist || state.selectedTrackIds.size === 0) return;
 
   const selectedTracks = state.currentPlaylist.tracks.filter((t) => state.selectedTrackIds.has(t.id));
