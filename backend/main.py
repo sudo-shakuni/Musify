@@ -28,7 +28,7 @@ from backend.spotify_meta import fetch_metadata
 from setup_ffmpeg import ensure_ffmpeg
 
 
-app = FastAPI(title="Spotify Playlist Cloner & Downloader")
+app = FastAPI(title="Musify API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -126,7 +126,7 @@ class SelectFolderRequest(BaseModel):
 def get_system_info():
     """Returns system status, default music directory, and FFmpeg verification."""
     ffmpeg_bin, _ = ensure_ffmpeg()
-    user_music = os.path.join(os.path.expanduser("~"), "Music", "Spotify Downloads")
+    user_music = os.path.join(os.path.expanduser("~"), "Music", "Musify Downloads")
     os.makedirs(user_music, exist_ok=True)
 
     return {
@@ -309,7 +309,7 @@ if __name__ == "__main__":
     ensure_ffmpeg()
     port = 8800
     print(f"\n=======================================================")
-    print(f" Spotify Playlist Cloner & Downloader")
+    print(f" 🎵 Musify — Studio-Grade Music Downloader")
     print(f" Running at: http://localhost:{port}")
     print(f"=======================================================\n")
     # Open browser automatically

@@ -76,7 +76,7 @@ def main():
     app_url = f"http://127.0.0.1:{PORT}"
     try:
         webview.create_window(
-            title="Spotify Playlist Cloner & Downloader",
+            title="Musify — Studio-Grade Music Downloader",
             url=app_url,
             width=1240,
             height=850,
@@ -85,7 +85,7 @@ def main():
         )
         webview.start()
     except Exception as e:
-        print(f"[Desktop Window Notice] Opening in web browser: {e}")
+        print(f"[Musify Notice] Opening in web browser: {e}")
         print(f"Running at: {app_url}")
         print("Press Ctrl+C to close and exit.")
         webbrowser.open(app_url)
@@ -93,7 +93,7 @@ def main():
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\nShutting down Spotify Cloner...")
+            print("\nShutting down Musify...")
 
     if server:
         server.stop()

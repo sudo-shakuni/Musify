@@ -1,9 +1,9 @@
 @echo off
-title Spotify Playlist Cloner and Downloader
+title Musify
 cd /d "%~dp0"
 
 echo ========================================================
-echo   Spotify Playlist Cloner and Downloader
+echo   Musify — Studio-Grade Music Downloader
 echo ========================================================
 echo.
 
@@ -47,7 +47,7 @@ echo [3/3] Verifying FFmpeg audio engine...
 
 echo.
 echo ========================================================
-echo   Launching Spotify Playlist Cloner & Downloader
+echo   Launching Musify — Studio-Grade Music Downloader
 echo ========================================================
 echo.
 

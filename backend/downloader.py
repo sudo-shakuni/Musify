@@ -219,7 +219,7 @@ class DownloadManager:
     ):
         output_dir = options.get("output_dir", "")
         if not output_dir:
-            user_music = os.path.join(os.path.expanduser("~"), "Music", "Spotify Downloads")
+            user_music = os.path.join(os.path.expanduser("~"), "Music", "Musify Downloads")
             output_dir = os.path.join(user_music, sanitize_filename(playlist_title))
 
         os.makedirs(output_dir, exist_ok=True)

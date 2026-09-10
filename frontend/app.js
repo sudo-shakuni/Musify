@@ -1,5 +1,5 @@
 /**
- * Spotify Playlist Cloner & Downloader - Modern Frontend Controller
+ * Musify — Music & Playlist Downloader - Modern Frontend Controller
  * Features:
  * - Native Windows Folder Picker via Backend Dialog
  * - Local HQ Full-Track Streaming & Preview Mini-Player
@@ -32,7 +32,7 @@ const state = {
   batchSize: 50,
   lastCheckedIndex: -1,
   activeDownloadsMap: new Map(), // track_id -> { track_id, title, artists, status, message, cover_url }
-  recentStorageKey: "spotify_cloner_recent_v1",
+  recentStorageKey: "musify_recent_v1",
   observer: null,
   lastClipboardChecked: "",
   publicUrl: "",
