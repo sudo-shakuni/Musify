@@ -45,6 +45,14 @@ const state = {
   observer: null,
   lastClipboardChecked: "",
   publicUrl: "",
+  networkInfo: null,
+  activeQrMode: "lan",
+  lyrics: {
+    track: null,
+    lines: [],
+    currentLineIndex: -1,
+    isOpen: false,
+  },
 };
 
 // DOM Elements
@@ -208,6 +216,25 @@ const elements = {
 
   // Toasts
   toastContainer: document.getElementById("toast-container"),
+
+  // Lyrics Drawer
+  mpBtnLyrics: document.getElementById("mp-btn-lyrics"),
+  lyricsDrawer: document.getElementById("lyrics-drawer"),
+  btnCloseLyrics: document.getElementById("btn-close-lyrics"),
+  lyricsTrackTitle: document.getElementById("lyrics-track-title"),
+  lyricsTrackArtist: document.getElementById("lyrics-track-artist"),
+  lyricsSourceBadge: document.getElementById("lyrics-source-badge"),
+  lyricsLinesContainer: document.getElementById("lyrics-lines-container"),
+
+  // Mobile Transfer Modal
+  btnMobileTransfer: document.getElementById("btn-mobile-transfer"),
+  mobileTransferModal: document.getElementById("mobile-transfer-modal"),
+  btnCloseMobileModal: document.getElementById("btn-close-mobile-modal"),
+  tabQrLan: document.getElementById("tab-qr-lan"),
+  tabQrTunnel: document.getElementById("tab-qr-tunnel"),
+  qrCodeWrapper: document.getElementById("qr-code-wrapper"),
+  mobileTransferUrl: document.getElementById("mobile-transfer-url"),
+  btnCopyMobileUrl: document.getElementById("btn-copy-mobile-url"),
 };
 
 // Initialize Application
@@ -513,6 +540,36 @@ function setupEventListeners() {
   // Library Search / Filter
   if (elements.libraryFilterInput) {
     elements.libraryFilterInput.addEventListener("input", debounce(filterUserPlaylists, 200));
+  }
+
+  // Lyrics Drawer Controls
+  if (elements.mpBtnLyrics) {
+    elements.mpBtnLyrics.addEventListener("click", toggleLyricsDrawer);
+  }
+  if (elements.btnCloseLyrics) {
+    elements.btnCloseLyrics.addEventListener("click", closeLyricsDrawer);
+  }
+
+  // Mobile Transfer Modal Controls
+  if (elements.btnMobileTransfer) {
+    elements.btnMobileTransfer.addEventListener("click", openMobileTransferModal);
+  }
+  if (elements.btnCloseMobileModal) {
+    elements.btnCloseMobileModal.addEventListener("click", closeMobileTransferModal);
+  }
+  if (elements.mobileTransferModal) {
+    elements.mobileTransferModal.addEventListener("click", (e) => {
+      if (e.target === elements.mobileTransferModal) closeMobileTransferModal();
+    });
+  }
+  if (elements.tabQrLan) {
+    elements.tabQrLan.addEventListener("click", () => switchQrMode("lan"));
+  }
+  if (elements.tabQrTunnel) {
+    elements.tabQrTunnel.addEventListener("click", () => switchQrMode("tunnel"));
+  }
+  if (elements.btnCopyMobileUrl) {
+    elements.btnCopyMobileUrl.addEventListener("click", copyMobileTransferUrl);
   }
 
   // Listen for popup OAuth callback
@@ -1226,6 +1283,7 @@ function setupAudioPlayer() {
     if (elements.mpProgressFill) elements.mpProgressFill.style.width = `${pct}%`;
     if (elements.mpCurrentTime) elements.mpCurrentTime.textContent = formatSec(current);
     if (elements.mpTotalTime) elements.mpTotalTime.textContent = formatSec(total);
+    updateLyricsTime(current);
   });
 
   elements.previewPlayer.addEventListener("ended", () => {
@@ -1278,6 +1336,7 @@ function setupAudioPlayer() {
     elements.mpBtnClose.addEventListener("click", () => {
       elements.previewPlayer.pause();
       elements.miniPlayer.classList.add("hidden");
+      closeLyricsDrawer();
       resetRowPlayIcons();
     });
   }
@@ -1318,6 +1377,9 @@ function playTrackAudio(track, isHQ, audioUrlOrPath) {
     if (elements.mpBtnPlay) elements.mpBtnPlay.innerHTML = '<i data-lucide="pause"></i>';
     if (elements.equalizerBars) elements.equalizerBars.style.opacity = "1";
     if (elements.miniPlayer) elements.miniPlayer.classList.remove("hidden");
+
+    // Fetch and sync lyrics for currently playing track
+    loadAndShowLyrics(track, isHQ, isHQ ? audioUrlOrPath : null);
 
     resetRowPlayIcons();
     const rowBtn = document.querySelector(`.btn-preview-play[data-id="${track.id}"]`);
@@ -2101,4 +2163,239 @@ function escapeHtml(text) {
 
 function sanitizeFilename(name) {
   return name.replace(/[<>:"/\\|?*]/g, "_").trim();
+}
+
+// ==========================================
+// Synced Lyrics & Karaoke Controllers
+// ==========================================
+
+function toggleLyricsDrawer() {
+  if (!elements.lyricsDrawer) return;
+  const isHidden = elements.lyricsDrawer.classList.contains("hidden");
+  if (isHidden) {
+    elements.lyricsDrawer.classList.remove("hidden");
+    state.lyrics.isOpen = true;
+    if (state.currentlyPlayingId && (!state.lyrics.track || state.lyrics.track.id !== state.currentlyPlayingId)) {
+      const track = state.currentPlaylist && state.currentPlaylist.tracks
+        ? state.currentPlaylist.tracks.find((t) => t.id === state.currentlyPlayingId)
+        : null;
+      if (track) {
+        const isLocal = state.isPlayingHQ;
+        const localPath = isLocal ? state.downloadedFilesMap.get(track.id) : null;
+        loadAndShowLyrics(track, isLocal, localPath);
+      }
+    }
+  } else {
+    closeLyricsDrawer();
+  }
+}
+
+function closeLyricsDrawer() {
+  if (elements.lyricsDrawer) {
+    elements.lyricsDrawer.classList.add("hidden");
+    state.lyrics.isOpen = false;
+  }
+}
+
+async function loadAndShowLyrics(track, isLocal = false, localPath = null) {
+  if (!track) return;
+  state.lyrics.track = track;
+  state.lyrics.lines = [];
+  state.lyrics.currentLineIndex = -1;
+
+  if (elements.lyricsTrackTitle) elements.lyricsTrackTitle.textContent = track.title;
+  if (elements.lyricsTrackArtist) elements.lyricsTrackArtist.textContent = track.artists;
+  if (elements.lyricsSourceBadge) {
+    elements.lyricsSourceBadge.textContent = "SEARCHING";
+    elements.lyricsSourceBadge.className = "badge-status searching";
+  }
+
+  if (elements.lyricsLinesContainer) {
+    elements.lyricsLinesContainer.innerHTML = `
+      <div class="lyrics-loading-state">
+        <div class="spinner"></div>
+        <p>Fetching synced lyrics...</p>
+      </div>
+    `;
+  }
+
+  try {
+    let res;
+    if (isLocal && localPath) {
+      res = await fetch(`/api/lyrics/local?path=${encodeURIComponent(localPath)}`);
+    } else {
+      const durSec = track.duration_ms ? Math.round(track.duration_ms / 1000) : 0;
+      res = await fetch(`/api/lyrics/get?title=${encodeURIComponent(track.title)}&artist=${encodeURIComponent(track.artists)}&album=${encodeURIComponent(track.album || "")}&duration=${durSec}`);
+    }
+
+    if (!res.ok) throw new Error("Lyrics unavailable");
+    const data = await res.json();
+
+    if (data.found && data.lines && data.lines.length > 0) {
+      state.lyrics.lines = data.lines;
+      if (elements.lyricsSourceBadge) {
+        elements.lyricsSourceBadge.textContent = data.has_synced ? "SYNCED LRC" : "PLAIN TEXT";
+        elements.lyricsSourceBadge.className = "badge-status completed";
+      }
+      renderLyricsLines(data.lines);
+    } else if (data.found && data.plain_lyrics) {
+      const plainLines = data.plain_lyrics.split("\n").filter(l => l.trim()).map((text, idx) => ({ time: idx * 5, text }));
+      state.lyrics.lines = plainLines;
+      if (elements.lyricsSourceBadge) {
+        elements.lyricsSourceBadge.textContent = "PLAIN TEXT";
+        elements.lyricsSourceBadge.className = "badge-status queued";
+      }
+      renderLyricsLines(plainLines);
+    } else {
+      if (elements.lyricsSourceBadge) {
+        elements.lyricsSourceBadge.textContent = "NO LYRICS";
+        elements.lyricsSourceBadge.className = "badge-status failed";
+      }
+      if (elements.lyricsLinesContainer) {
+        elements.lyricsLinesContainer.innerHTML = `
+          <div class="lyrics-empty-state">
+            <i data-lucide="mic-off"></i>
+            <p>No synchronized lyrics found for this track</p>
+          </div>
+        `;
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }
+  } catch (err) {
+    if (elements.lyricsLinesContainer) {
+      elements.lyricsLinesContainer.innerHTML = `
+        <div class="lyrics-empty-state">
+          <i data-lucide="music-2"></i>
+          <p>Lyrics could not be loaded</p>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+}
+
+function renderLyricsLines(lines) {
+  if (!elements.lyricsLinesContainer) return;
+  const fragment = document.createDocumentFragment();
+
+  lines.forEach((line, index) => {
+    const p = document.createElement("p");
+    p.className = "lyrics-line";
+    p.setAttribute("data-index", index);
+    p.setAttribute("data-time", line.time);
+    p.textContent = line.text || "♪ ♪ ♪";
+    p.addEventListener("click", () => {
+      if (elements.previewPlayer) {
+        elements.previewPlayer.currentTime = line.time;
+        elements.previewPlayer.play().catch(() => {});
+      }
+    });
+    fragment.appendChild(p);
+  });
+
+  elements.lyricsLinesContainer.innerHTML = "";
+  elements.lyricsLinesContainer.appendChild(fragment);
+}
+
+function updateLyricsTime(currentTime) {
+  if (!state.lyrics.lines || state.lyrics.lines.length === 0) return;
+
+  let activeIndex = -1;
+  for (let i = 0; i < state.lyrics.lines.length; i++) {
+    if (currentTime >= state.lyrics.lines[i].time) {
+      activeIndex = i;
+    } else {
+      break;
+    }
+  }
+
+  if (activeIndex !== state.lyrics.currentLineIndex && activeIndex !== -1) {
+    state.lyrics.currentLineIndex = activeIndex;
+    const allLines = elements.lyricsLinesContainer ? elements.lyricsLinesContainer.querySelectorAll(".lyrics-line") : [];
+
+    allLines.forEach((el, idx) => {
+      if (idx === activeIndex) {
+        el.className = "lyrics-line active";
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      } else if (idx < activeIndex) {
+        el.className = "lyrics-line passed";
+      } else {
+        el.className = "lyrics-line";
+      }
+    });
+  }
+}
+
+// ==========================================
+// Mobile Transfer & QR Controllers
+// ==========================================
+
+async function openMobileTransferModal() {
+  if (!elements.mobileTransferModal) return;
+  elements.mobileTransferModal.classList.remove("hidden");
+
+  try {
+    if (!state.networkInfo) {
+      const res = await fetch("/api/system/network-info");
+      if (res.ok) {
+        state.networkInfo = await res.json();
+      }
+    }
+    renderQrCodeDisplay();
+  } catch (err) {
+    showToast("Error resolving local network IP", "error");
+  }
+}
+
+function closeMobileTransferModal() {
+  if (elements.mobileTransferModal) {
+    elements.mobileTransferModal.classList.add("hidden");
+  }
+}
+
+function switchQrMode(mode) {
+  state.activeQrMode = mode;
+  if (elements.tabQrLan) elements.tabQrLan.classList.toggle("active", mode === "lan");
+  if (elements.tabQrTunnel) elements.tabQrTunnel.classList.toggle("active", mode === "tunnel");
+  renderQrCodeDisplay();
+}
+
+function renderQrCodeDisplay() {
+  if (!state.networkInfo) return;
+  const isTunnel = state.activeQrMode === "tunnel";
+  let targetUrl = state.networkInfo.mobile_lan_url || `http://${state.networkInfo.lan_ip || "127.0.0.1"}:8800/mobile`;
+
+  if (isTunnel) {
+    if (state.networkInfo.mobile_tunnel_url) {
+      targetUrl = state.networkInfo.mobile_tunnel_url;
+    } else {
+      showToast("Cloudflare Tunnel is not active; using Local Wi-Fi URL", "info", 3000);
+      state.activeQrMode = "lan";
+      if (elements.tabQrLan) elements.tabQrLan.classList.add("active");
+      if (elements.tabQrTunnel) elements.tabQrTunnel.classList.remove("active");
+    }
+  }
+
+  if (elements.mobileTransferUrl) {
+    elements.mobileTransferUrl.value = targetUrl;
+  }
+
+  if (elements.qrCodeWrapper) {
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(targetUrl)}&bgcolor=ffffff&color=000000&margin=0`;
+    elements.qrCodeWrapper.innerHTML = `
+      <img src="${qrApiUrl}" alt="Scan QR Code" width="160" height="160" style="display:block; border-radius: 4px;" onerror="this.parentElement.innerHTML='<p style=\\'color:#000;font-size:0.8rem;text-align:center;\\'>QR Code</p>'" />
+    `;
+  }
+}
+
+async function copyMobileTransferUrl() {
+  if (!elements.mobileTransferUrl || !elements.mobileTransferUrl.value) return;
+  try {
+    await navigator.clipboard.writeText(elements.mobileTransferUrl.value);
+    showToast("Mobile link copied to clipboard!", "success", 2000);
+  } catch (e) {
+    elements.mobileTransferUrl.select();
+    document.execCommand("copy");
+    showToast("Mobile link copied to clipboard!", "success", 2000);
+  }
 }

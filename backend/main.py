@@ -17,6 +17,9 @@ from typing import Any, Dict, List, Optional
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+import io
+import socket
+import zipfile
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -24,9 +27,25 @@ from pydantic import BaseModel
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.downloader import download_manager, open_folder_in_explorer
+from backend.lyrics import fetch_lyrics, parse_lrc_lines
 from backend.spotify_auth import spotify_auth
 from backend.spotify_meta import fetch_metadata
 from setup_ffmpeg import ensure_ffmpeg
+
+
+def get_local_lan_ip() -> str:
+    """Detects the primary local LAN IP address on Windows / Mac / Linux."""
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.connect(("8.8.8.8", 80))
+        ip = s.getsockname()[0]
+        s.close()
+        return ip
+    except Exception:
+        try:
+            return socket.gethostbyname(socket.gethostname())
+        except Exception:
+            return "127.0.0.1"
 
 
 app = FastAPI(title="Musify API")
@@ -399,12 +418,186 @@ def get_my_saved_tracks(limit: int = 50, offset: int = 0):
         raise HTTPException(status_code=400, detail=str(e))
 
 
+# ==========================================
+# Lyrics Endpoints (Synced LRC & Plain)
+# ==========================================
+
+@app.get("/api/lyrics/get")
+def get_track_lyrics(
+    title: str,
+    artist: str,
+    album: Optional[str] = "",
+    duration: Optional[int] = 0,
+):
+    """Fetches synchronized and plain lyrics from LRCLIB."""
+    if not title or not artist:
+        raise HTTPException(status_code=400, detail="Title and artist parameters are required.")
+    data = fetch_lyrics(title, artist, album or "", duration or 0)
+    if not data:
+        return {"found": False, "synced_lyrics": "", "plain_lyrics": "", "lines": [], "instrumental": False}
+    return {"found": True, **data}
+
+
+@app.get("/api/lyrics/local")
+def get_local_lyrics(path: str):
+    """Reads companion .lrc file or extracts embedded lyrics from an audio file."""
+    if not path or not os.path.exists(path):
+        raise HTTPException(status_code=404, detail="File not found.")
+
+    # 1. Check for companion .lrc file
+    base_no_ext = os.path.splitext(path)[0]
+    lrc_path = f"{base_no_ext}.lrc"
+    if os.path.exists(lrc_path):
+        try:
+            with open(lrc_path, "r", encoding="utf-8") as f:
+                lrc_text = f.read()
+            lines = parse_lrc_lines(lrc_text)
+            return {
+                "found": True,
+                "synced_lyrics": lrc_text,
+                "plain_lyrics": "\n".join(l["text"] for l in lines if l["text"]),
+                "lines": lines,
+                "has_synced": bool(lines),
+                "source": "local_lrc",
+            }
+        except Exception:
+            pass
+
+    # 2. Extract embedded tags if .mp3 or .flac
+    ext = os.path.splitext(path)[1].lower()
+    lyrics_text = ""
+    try:
+        if ext == ".mp3":
+            from mutagen.mp3 import MP3
+            audio = MP3(path)
+            for k in audio.tags.keys() if audio.tags else []:
+                if k.startswith("USLT") or k.startswith("SYLT"):
+                    lyrics_text = str(audio.tags[k].text)
+                    break
+        elif ext == ".flac":
+            from mutagen.flac import FLAC
+            audio = FLAC(path)
+            lyrics_text = audio.get("LYRICS", [""])[0]
+    except Exception:
+        pass
+
+    if lyrics_text:
+        lines = parse_lrc_lines(lyrics_text)
+        return {
+            "found": True,
+            "synced_lyrics": lyrics_text if lines else "",
+            "plain_lyrics": lyrics_text,
+            "lines": lines,
+            "has_synced": bool(lines),
+            "source": "embedded_tag",
+        }
+
+    return {"found": False, "synced_lyrics": "", "plain_lyrics": "", "lines": [], "has_synced": False}
+
+
+# ==========================================
+# Mobile Transfer & Local Wi-Fi Streamer
+# ==========================================
+
+@app.get("/api/system/network-info")
+def get_network_info():
+    """Returns local LAN IP, local port, and active Cloudflare tunnel for QR transfer."""
+    lan_ip = get_local_lan_ip()
+    port = 8800
+    lan_url = f"http://{lan_ip}:{port}"
+    mobile_lan_url = f"{lan_url}/mobile"
+    mobile_tunnel_url = f"{PUBLIC_TUNNEL_URL}/mobile" if PUBLIC_TUNNEL_URL else None
+
+    return {
+        "lan_ip": lan_ip,
+        "port": port,
+        "lan_url": lan_url,
+        "mobile_lan_url": mobile_lan_url,
+        "public_tunnel_url": PUBLIC_TUNNEL_URL,
+        "mobile_tunnel_url": mobile_tunnel_url,
+    }
+
+
+@app.get("/api/mobile/library")
+def get_mobile_library():
+    """Scans local music download folder and returns playlists & tracks for mobile browser."""
+    user_music = os.path.join(os.path.expanduser("~"), "Music", "Musify Downloads")
+    os.makedirs(user_music, exist_ok=True)
+
+    playlists = []
+    for entry in os.scandir(user_music):
+        if entry.is_dir():
+            tracks = []
+            audio_exts = {".mp3", ".m4a", ".flac", ".opus", ".ogg", ".wav"}
+            for f in os.scandir(entry.path):
+                ext = os.path.splitext(f.name)[1].lower()
+                if f.is_file() and ext in audio_exts:
+                    tracks.append({
+                        "filename": f.name,
+                        "path": f.path,
+                        "size_bytes": f.stat().st_size,
+                        "size_mb": f"{f.stat().st_size / (1024*1024):.1f} MB",
+                    })
+            if tracks:
+                playlists.append({
+                    "name": entry.name,
+                    "path": entry.path,
+                    "track_count": len(tracks),
+                    "tracks": tracks,
+                })
+
+    return {"base_dir": user_music, "playlists": playlists}
+
+
+@app.get("/api/mobile/download-zip")
+def download_playlist_as_zip(path: str):
+    """Streams a dynamically compressed .zip of a playlist folder for 1-tap mobile download."""
+    if not path:
+        raise HTTPException(status_code=400, detail="Path parameter is required.")
+
+    abs_path = os.path.abspath(path)
+    if not os.path.exists(abs_path) or not os.path.isdir(abs_path):
+        raise HTTPException(status_code=404, detail="Playlist folder not found.")
+
+    def zip_stream():
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for root, _, files in os.walk(abs_path):
+                for f in files:
+                    full_p = os.path.join(root, f)
+                    rel_p = os.path.relpath(full_p, abs_path)
+                    zf.write(full_p, arcname=rel_p)
+        buffer.seek(0)
+        while True:
+            chunk = buffer.read(64 * 1024)
+            if not chunk:
+                break
+            yield chunk
+
+    folder_name = os.path.basename(abs_path) or "Musify_Playlist"
+    encoded_name = requests.utils.quote(f"{folder_name}.zip")
+    return StreamingResponse(
+        zip_stream(),
+        media_type="application/zip",
+        headers={
+            "Content-Disposition": f'attachment; filename="{folder_name}.zip"; filename*=UTF-8\'\'{encoded_name}',
+        }
+    )
+
+
 # Serve Frontend static assets
 if os.path.exists(FRONTEND_DIR):
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
     @app.get("/")
     def serve_ui():
+        return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
+
+    @app.get("/mobile")
+    def serve_mobile_ui():
+        mobile_path = os.path.join(FRONTEND_DIR, "mobile.html")
+        if os.path.exists(mobile_path):
+            return FileResponse(mobile_path)
         return FileResponse(os.path.join(FRONTEND_DIR, "index.html"))
 
 

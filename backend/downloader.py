@@ -20,10 +20,11 @@ import static_ffmpeg
 static_ffmpeg.add_paths()
 
 import yt_dlp
-from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TDRC, TRCK
+from mutagen.id3 import ID3, APIC, TIT2, TPE1, TALB, TDRC, TRCK, USLT
 from mutagen.mp3 import MP3
 from mutagen.mp4 import MP4, MP4Cover
 from mutagen.flac import FLAC, Picture
+from backend.lyrics import fetch_lyrics, save_lrc_file
 
 
 def sanitize_filename(name: str) -> str:
@@ -100,9 +101,10 @@ def embed_metadata(
     cover_url: Optional[str] = None,
     audio_format: str = "mp3",
     embed_artwork: bool = True,
+    lyrics_text: Optional[str] = None,
 ) -> None:
     """
-    Embeds complete ID3 / Vorbis / MP4 metadata and high-res cover art.
+    Embeds complete ID3 / Vorbis / MP4 metadata, high-res cover art, and synchronized/plain lyrics.
     Uses in-memory cache to avoid re-downloading duplicate album covers.
     """
     img_data = None
@@ -134,6 +136,9 @@ def embed_metadata(
             audio.tags.add(TDRC(encoding=3, text=[str(year)]))
         audio.tags.add(TRCK(encoding=3, text=[f"{track_number}/{total_tracks}"]))
 
+        if lyrics_text:
+            audio.tags.add(USLT(encoding=3, lang="eng", desc="Lyrics", text=lyrics_text))
+
         if img_data:
             audio.tags.add(APIC(
                 encoding=3,
@@ -152,6 +157,8 @@ def embed_metadata(
         if year:
             audio["\xa9day"] = [str(year)]
         audio["trkn"] = [(track_number, total_tracks)]
+        if lyrics_text:
+            audio["\xa9lyr"] = [lyrics_text]
         if img_data:
             audio["covr"] = [MP4Cover(img_data, imageformat=MP4Cover.FORMAT_JPEG)]
         audio.save()
@@ -165,6 +172,8 @@ def embed_metadata(
             audio["DATE"] = str(year)
         audio["TRACKNUMBER"] = str(track_number)
         audio["TRACKTOTAL"] = str(total_tracks)
+        if lyrics_text:
+            audio["LYRICS"] = lyrics_text
 
         if img_data:
             picture = Picture()
@@ -487,12 +496,26 @@ class DownloadManager:
                     os.remove(final_filepath)
                 shutil.move(temp_converted, final_filepath)
 
-                # Tagging phase
+                # Tagging & Lyrics phase
                 loop.call_soon_threadsafe(
                     self.broadcast_event,
                     "track_update",
-                    {"track_id": track_id, "status": "tagging", "progress": 90, "message": "Embedding metadata & cover art..."},
+                    {"track_id": track_id, "status": "tagging", "progress": 90, "message": "Embedding metadata & lyrics..."},
                 )
+
+                # Fetch synchronized & plain lyrics
+                lyrics_text = None
+                if options.get("download_lyrics", True):
+                    try:
+                        dur_sec = duration_ms // 1000 if duration_ms > 0 else 0
+                        lyrics_data = fetch_lyrics(track_title, track_artists, album_name, dur_sec)
+                        if lyrics_data:
+                            lyrics_text = lyrics_data.get("plain_lyrics") or lyrics_data.get("synced_lyrics")
+                            if lyrics_data.get("synced_lyrics"):
+                                base_fname = os.path.splitext(filename)[0]
+                                save_lrc_file(output_dir, base_fname, lyrics_data["synced_lyrics"])
+                    except Exception as lex:
+                        print(f"[Lyrics] Minor error fetching lyrics for '{track_title}': {lex}")
 
                 embed_metadata(
                     file_path=final_filepath,
@@ -505,6 +528,7 @@ class DownloadManager:
                     cover_url=cover_url,
                     audio_format=audio_format,
                     embed_artwork=options.get("embed_artwork", True),
+                    lyrics_text=lyrics_text,
                 )
 
                 with self._lock:

@@ -48,6 +48,9 @@
           <img id="spotify-nav-avatar" class="spotify-nav-avatar hidden" src="" alt="Avatar" />
           <span id="spotify-user-name">Connect Spotify</span>
         </button>
+        <button id="btn-mobile-transfer" class="btn-icon" title="Transfer to Mobile via QR" aria-label="Transfer to Mobile">
+          <i data-lucide="smartphone"></i>
+        </button>
         <button id="btn-settings-toggle" class="btn-icon" title="Preferences" aria-label="Preferences">
           <i data-lucide="settings"></i>
         </button>
@@ -527,9 +530,33 @@
         <div class="equalizer-bars" id="equalizer-bars">
           <span></span><span></span><span></span><span></span>
         </div>
+        <button id="mp-btn-lyrics" class="btn-icon" title="Karaoke Synced Lyrics" aria-label="Toggle Lyrics"><i data-lucide="mic-2"></i></button>
         <button id="mp-btn-mute" class="btn-icon" title="Mute / Unmute" aria-label="Mute or Unmute"><i data-lucide="volume-2"></i></button>
         <input type="range" id="mp-volume" min="0" max="1" step="0.05" value="0.8" class="mp-slider" title="Volume" aria-label="Audio Volume" />
         <button id="mp-btn-close" class="btn-icon" title="Close Preview" aria-label="Close Preview Player"><i data-lucide="x"></i></button>
+      </div>
+    </div>
+
+    <!-- Glassmorphic Karaoke Synced Lyrics Drawer -->
+    <div id="lyrics-drawer" class="lyrics-drawer card hidden">
+      <div class="lyrics-drawer-header">
+        <div class="lyrics-header-info">
+          <i data-lucide="mic-2" class="lyrics-header-icon"></i>
+          <div>
+            <div id="lyrics-track-title" class="lyrics-title">Song Title</div>
+            <div id="lyrics-track-artist" class="lyrics-artist">Live Synchronized</div>
+          </div>
+        </div>
+        <div class="lyrics-header-actions">
+          <span id="lyrics-source-badge" class="badge-status completed">SYNCED</span>
+          <button type="button" id="btn-close-lyrics" class="btn-icon" title="Close Lyrics" aria-label="Close Lyrics"><i data-lucide="x"></i></button>
+        </div>
+      </div>
+      <div id="lyrics-lines-container" class="lyrics-lines-container">
+        <div class="lyrics-empty-state">
+          <i data-lucide="music-2"></i>
+          <p>Play a track to view live synchronized lyrics</p>
+        </div>
       </div>
     </div>
 
@@ -612,6 +639,65 @@
               <button type="button" id="btn-submit-manual-token" class="btn btn-secondary">
                 Connect
               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Transfer & QR Modal -->
+    <div id="mobile-transfer-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-modal-title">
+      <div class="modal-card mobile-modal-card">
+        <div class="modal-header">
+          <div class="auth-modal-title-row">
+            <i data-lucide="smartphone" class="mobile-modal-icon"></i>
+            <div>
+              <h2 id="mobile-modal-title" class="modal-title">Transfer to Mobile Phone</h2>
+              <p class="modal-subtitle">Direct Wi-Fi download to iOS & Android — zero cables needed</p>
+            </div>
+          </div>
+          <button type="button" id="btn-close-mobile-modal" class="btn-icon" title="Close" aria-label="Close modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="mobile-modal-body">
+          <div class="qr-mode-tabs">
+            <button type="button" id="tab-qr-lan" class="qr-tab active">
+              <i data-lucide="wifi"></i> Local Wi-Fi (Fastest)
+            </button>
+            <button type="button" id="tab-qr-tunnel" class="qr-tab">
+              <i data-lucide="globe"></i> Cloudflare HTTPS
+            </button>
+          </div>
+
+          <div class="qr-display-card">
+            <div id="qr-code-wrapper" class="qr-code-wrapper">
+              <div class="spinner"></div>
+            </div>
+            <div class="qr-link-info">
+              <span class="qr-instructions">Scan with your Phone Camera on the same Wi-Fi:</span>
+              <div class="qr-url-row">
+                <input type="text" id="mobile-transfer-url" readonly class="qr-url-input" />
+                <button type="button" id="btn-copy-mobile-url" class="btn btn-secondary btn-sm" title="Copy URL">
+                  <i data-lucide="copy"></i> Copy
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mobile-transfer-features">
+            <div class="mobile-feature-item">
+              <i data-lucide="package"></i>
+              <span>1-Tap download entire playlists as <b>.ZIP</b></span>
+            </div>
+            <div class="mobile-feature-item">
+              <i data-lucide="download"></i>
+              <span>Save tracks directly into iPhone Files / Android storage</span>
+            </div>
+            <div class="mobile-feature-item">
+              <i data-lucide="mic-2"></i>
+              <span>Stream downloaded tracks with synced lyrics on mobile</span>
             </div>
           </div>
         </div>
