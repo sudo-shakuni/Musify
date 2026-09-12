@@ -170,7 +170,7 @@ async def start_download(req: DownloadStartRequest):
 
 
 @app.post("/api/download/cancel")
-def cancel_download():
+async def cancel_download():
     """Cancels active downloads."""
     download_manager.cancel_current_job()
     return {"status": "cancelled"}

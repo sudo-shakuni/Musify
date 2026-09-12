@@ -393,6 +393,11 @@ function setupEventListeners() {
     elements.btnLoadMore.addEventListener("click", renderNextTrackBatch);
   }
 
+  // Delegated click handler for tracks list (checkboxes, play preview/HQ, single downloads)
+  if (elements.tracksList) {
+    elements.tracksList.addEventListener("click", handleTracksListClick);
+  }
+
   // Live Queue Drawer Toggle & Close
   if (elements.btnBarToggleQueue) {
     elements.btnBarToggleQueue.addEventListener("click", () => {
@@ -989,50 +994,6 @@ function renderNextTrackBatch() {
       </div>
     `;
 
-    // Row Checkbox listener with Shift-Click range selection
-    const chk = row.querySelector(".track-checkbox");
-    chk.addEventListener("click", (e) => {
-      const clickedIdx = parseInt(chk.getAttribute("data-index"), 10);
-      if (e.shiftKey && state.lastCheckedIndex !== -1 && state.lastCheckedIndex !== clickedIdx) {
-        const minIdx = Math.min(state.lastCheckedIndex, clickedIdx);
-        const maxIdx = Math.max(state.lastCheckedIndex, clickedIdx);
-        const targetChecked = chk.checked;
-
-        for (let j = minIdx; j <= maxIdx; j++) {
-          const t = state.filteredTracks[j];
-          if (!t) continue;
-          if (targetChecked) {
-            state.selectedTrackIds.add(t.id);
-          } else {
-            state.selectedTrackIds.delete(t.id);
-          }
-          const rowChk = document.querySelector(`.track-checkbox[data-index="${j}"]`);
-          if (rowChk) rowChk.checked = targetChecked;
-        }
-      } else {
-        if (chk.checked) {
-          state.selectedTrackIds.add(track.id);
-        } else {
-          state.selectedTrackIds.delete(track.id);
-        }
-      }
-      state.lastCheckedIndex = clickedIdx;
-      updateSelectionSummary();
-      updateFilterChipBadges();
-    });
-
-    // 1-Click Single Track Download button
-    const btnSingleDl = row.querySelector(".btn-single-dl");
-    btnSingleDl.addEventListener("click", () => {
-      downloadSingleTrack(track);
-    });
-
-    // Audio play button listener (Preview or Full HQ Download)
-    const btnPlay = row.querySelector(".btn-preview-play");
-    if (btnPlay) {
-      btnPlay.addEventListener("click", () => handleTrackPlayClick(track));
-    }
-
     fragment.appendChild(row);
   }
 
@@ -1054,6 +1015,65 @@ function renderNextTrackBatch() {
 
   if (window.lucide) {
     window.lucide.createIcons();
+  }
+}
+
+// Delegated Click Handler for Tracks List
+function handleTracksListClick(e) {
+  // 1. Checkbox click
+  const chk = e.target.closest(".track-checkbox");
+  if (chk) {
+    const trackId = chk.getAttribute("data-id");
+    const clickedIdx = parseInt(chk.getAttribute("data-index"), 10);
+    if (e.shiftKey && state.lastCheckedIndex !== -1 && state.lastCheckedIndex !== clickedIdx) {
+      const minIdx = Math.min(state.lastCheckedIndex, clickedIdx);
+      const maxIdx = Math.max(state.lastCheckedIndex, clickedIdx);
+      const targetChecked = chk.checked;
+
+      for (let j = minIdx; j <= maxIdx; j++) {
+        const t = state.filteredTracks[j];
+        if (!t) continue;
+        if (targetChecked) {
+          state.selectedTrackIds.add(t.id);
+        } else {
+          state.selectedTrackIds.delete(t.id);
+        }
+        const rowChk = document.querySelector(`.track-checkbox[data-index="${j}"]`);
+        if (rowChk) rowChk.checked = targetChecked;
+      }
+    } else {
+      if (chk.checked) {
+        state.selectedTrackIds.add(trackId);
+      } else {
+        state.selectedTrackIds.delete(trackId);
+      }
+    }
+    state.lastCheckedIndex = clickedIdx;
+    updateSelectionSummary();
+    updateFilterChipBadges();
+    return;
+  }
+
+  // 2. Single-track download button
+  const btnSingleDl = e.target.closest(".btn-single-dl");
+  if (btnSingleDl) {
+    const trackId = btnSingleDl.getAttribute("data-id");
+    if (state.currentPlaylist && state.currentPlaylist.tracks) {
+      const track = state.currentPlaylist.tracks.find((t) => t.id === trackId);
+      if (track) downloadSingleTrack(track);
+    }
+    return;
+  }
+
+  // 3. Audio preview / HQ play button
+  const btnPlay = e.target.closest(".btn-preview-play");
+  if (btnPlay) {
+    const trackId = btnPlay.getAttribute("data-id");
+    if (state.currentPlaylist && state.currentPlaylist.tracks) {
+      const track = state.currentPlaylist.tracks.find((t) => t.id === trackId);
+      if (track) handleTrackPlayClick(track);
+    }
+    return;
   }
 }
 
