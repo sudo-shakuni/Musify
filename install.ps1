@@ -23,6 +23,21 @@ Write-Host "📦 Extracting files..." -ForegroundColor Cyan
 Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
 Remove-Item -Path $TempZip -Force -ErrorAction SilentlyContinue
 
+# Setup Python Environment & Dependencies
+Write-Host "🐍 Setting up Python environment and dependencies..." -ForegroundColor Cyan
+$VenvPython = "$InstallDir\.venv\Scripts\python.exe"
+if (-not (Test-Path $VenvPython)) {
+    Write-Host "Creating virtual environment in $InstallDir\.venv..." -ForegroundColor Yellow
+    & python -m venv "$InstallDir\.venv"
+}
+
+Write-Host "📦 Installing requirements..." -ForegroundColor Cyan
+& $VenvPython -m pip install --quiet -r "$InstallDir\requirements.txt"
+
+# Ensure FFmpeg is present
+Write-Host "🎬 Verifying FFmpeg binaries..." -ForegroundColor Cyan
+& $VenvPython "$InstallDir\setup_ffmpeg.py"
+
 # Create Desktop Shortcut
 $WshShell = New-Object -ComObject WScript.Shell
 $DesktopPath = [Environment]::GetFolderPath("Desktop")

@@ -468,7 +468,7 @@ class DownloadManager:
                     total_tracks=total_tracks,
                     cover_url=cover_url,
                     audio_format=audio_format,
-                    embed_artwork=self.options.get("embed_artwork", True),
+                    embed_artwork=options.get("embed_artwork", True),
                 )
 
                 with self._lock:

@@ -19,6 +19,69 @@ HEADERS = {
     "Accept-Language": "en-US,en;q=0.5",
 }
 
+# Setup resilient network routing for restricted/ISP-filtered networks (SNI bypass for Spotify endpoints)
+try:
+    import spotapi.http.request
+
+    _orig_spotapi_build_request = spotapi.http.request.TLSClient.build_request
+
+    def _get_ip_for_host(host: str) -> Optional[str]:
+        if "open.spotifycdn.com" in host:
+            return "140.248.138.251"
+        if "open.spotify.com" in host:
+            return "151.101.67.42"
+        if "spotify.com" in host or "spotifycdn" in host:
+            return "35.186.224.24"
+        return None
+
+    def _patched_spotapi_build_request(self, method: str, url: Any, **kwargs):
+        if isinstance(url, (bytes, memoryview)):
+            url = url.decode("utf-8")
+        headers = kwargs.setdefault("headers", {})
+        m = re.search(r"https?://([^/]+)", str(url))
+        if m:
+            host = m.group(1).split(":")[0]
+            ip = _get_ip_for_host(host)
+            if ip:
+                headers["Host"] = host
+                url = str(url).replace(f"https://{host}", f"https://{ip}")
+                kwargs["verify"] = False
+        return _orig_spotapi_build_request(self, method, url, **kwargs)
+
+    spotapi.http.request.TLSClient.build_request = _patched_spotapi_build_request
+except Exception:
+    pass
+
+try:
+    import urllib3.connection
+    import urllib3.util.ssl_
+
+    _orig_match = urllib3.connection._match_hostname
+
+    def _patched_match(cert, asserted_hostname, *args, **kwargs):
+        if asserted_hostname and "spotify" in asserted_hostname:
+            return
+        return _orig_match(cert, asserted_hostname, *args, **kwargs)
+
+    urllib3.connection._match_hostname = _patched_match
+
+    _orig_wrap = urllib3.util.ssl_.ssl_wrap_socket
+
+    def _patched_ssl_wrap(sock, *args, **kwargs):
+        server_hostname = kwargs.get("server_hostname")
+        context = args[0] if len(args) > 0 else kwargs.get("ssl_context")
+        if server_hostname and "spotify" in server_hostname:
+            kwargs["server_hostname"] = None
+            if context:
+                context.check_hostname = False
+        return _orig_wrap(sock, *args, **kwargs)
+
+    urllib3.util.ssl_.ssl_wrap_socket = _patched_ssl_wrap
+    urllib3.connection.ssl_wrap_socket = _patched_ssl_wrap
+    urllib3.disable_warnings()
+except Exception:
+    pass
+
 
 def parse_spotify_url(url_or_uri: str) -> Optional[Tuple[str, str]]:
     """
@@ -281,9 +344,10 @@ def fetch_playlist_unlimited(playlist_id: str) -> Dict[str, Any]:
             [a.get("profile", {}).get("name", "") for a in artists_items if a.get("profile")]
         ) or "Unknown Artist"
 
-        album_data = track_data.get("albumOfTrack", {})
+        album_data = track_data.get("albumOfTrack") or {}
         album_name = album_data.get("name") or title
-        year = (album_data.get("date", {}).get("isoString") or "")[:4]
+        date_obj = album_data.get("date") or {}
+        year = (date_obj.get("isoString") or "")[:4] if isinstance(date_obj, dict) else ""
 
         # Track cover art (highest resolution available)
         track_cover = ""
