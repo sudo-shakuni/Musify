@@ -8,8 +8,18 @@ echo ========================================================
 echo.
 
 :: Check Python installation
+set PYTHON_EXE=
 where python >nul 2>nul
-if %errorlevel% neq 0 (
+if %errorlevel% equ 0 set PYTHON_EXE=python
+if "%PYTHON_EXE%"=="" (
+    where py >nul 2>nul
+    if %errorlevel% equ 0 set PYTHON_EXE=py -3
+)
+if "%PYTHON_EXE%"=="" (
+    where python3 >nul 2>nul
+    if %errorlevel% equ 0 set PYTHON_EXE=python3
+)
+if "%PYTHON_EXE%"=="" (
     echo [ERROR] Python is not found in PATH!
     echo Please install Python 3.10+ from python.org and check "Add Python to PATH".
     pause
@@ -24,7 +34,7 @@ for /f "tokens=5" %%a in ('netstat -aon ^| findstr ":8800" ^| findstr "LISTENING
 :: Create virtual environment if not already present
 if not exist ".venv\Scripts\python.exe" (
     echo [1/3] Creating isolated Python virtual environment...
-    python -m venv .venv
+    %PYTHON_EXE% -m venv .venv
     if %errorlevel% neq 0 (
         echo [ERROR] Failed to create virtual environment.
         pause

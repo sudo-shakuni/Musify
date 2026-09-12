@@ -35,10 +35,21 @@ Write-Host "🐍 Setting up Python environment and dependencies..." -ForegroundC
 $VenvPython = "$InstallDir\.venv\Scripts\python.exe"
 if (-not (Test-Path $VenvPython)) {
     Write-Host "Creating virtual environment in $InstallDir\.venv..." -ForegroundColor Yellow
-    & python -m venv "$InstallDir\.venv"
+    $PythonExe = "python"
+    if (-not (Get-Command $PythonExe -ErrorAction SilentlyContinue)) {
+        if (Get-Command "py" -ErrorAction SilentlyContinue) {
+            $PythonExe = "py"
+        } elseif (Get-Command "python3" -ErrorAction SilentlyContinue) {
+            $PythonExe = "python3"
+        } else {
+            Write-Error "Python is not installed or not added to PATH. Please install Python 3."
+        }
+    }
+    & $PythonExe -m venv "$InstallDir\.venv"
 }
 
 Write-Host "📦 Installing requirements..." -ForegroundColor Cyan
+& $VenvPython -m pip install --upgrade pip --quiet
 & $VenvPython -m pip install --quiet -r "$InstallDir\requirements.txt"
 
 # Ensure FFmpeg is present
