@@ -1147,29 +1147,33 @@ function filterTracks() {
 
   if (!state.currentPlaylist) return;
 
-  state.filteredTracks = state.currentPlaylist.tracks.filter((t) => {
-    // 1. Text Search Match
-    if (query.length > 0) {
-      const text = `${t.title} ${t.artists} ${t.album || ""}`.toLowerCase();
-      if (!text.includes(query)) return false;
-    }
+  if (query.length === 0 && state.activeFilterChip === "all") {
+    state.filteredTracks = state.currentPlaylist.tracks;
+  } else {
+    state.filteredTracks = state.currentPlaylist.tracks.filter((t) => {
+      // 1. Text Search Match
+      if (query.length > 0) {
+        const text = `${t.title} ${t.artists} ${t.album || ""}`.toLowerCase();
+        if (!text.includes(query)) return false;
+      }
 
-    // 2. Quick Filter Chip Match
-    if (state.activeFilterChip === "selected") {
-      return state.selectedTrackIds.has(t.id);
-    }
-    if (state.activeFilterChip === "unselected") {
-      return !state.selectedTrackIds.has(t.id);
-    }
-    if (state.activeFilterChip === "downloaded") {
-      return state.downloadedFilesMap.has(t.id);
-    }
-    if (state.activeFilterChip === "failed") {
-      return state.failedTrackIds.has(t.id);
-    }
+      // 2. Quick Filter Chip Match
+      if (state.activeFilterChip === "selected") {
+        return state.selectedTrackIds.has(t.id);
+      }
+      if (state.activeFilterChip === "unselected") {
+        return !state.selectedTrackIds.has(t.id);
+      }
+      if (state.activeFilterChip === "downloaded") {
+        return state.downloadedFilesMap.has(t.id);
+      }
+      if (state.activeFilterChip === "failed") {
+        return state.failedTrackIds.has(t.id);
+      }
 
-    return true;
-  });
+      return true;
+    });
+  }
 
   // Reset rendering pointer and re-render from batch 0
   state.renderedTrackCount = 0;

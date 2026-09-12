@@ -616,6 +616,12 @@ class DownloadManager:
             },
         )
 
+        # Free temporary worker memory
+        with bytes_lock:
+            track_bytes_downloaded.clear()
+        with dict_lock:
+            downloaded_dict.clear()
+
 
 # Global singleton manager
 download_manager = DownloadManager()

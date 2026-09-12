@@ -14,11 +14,12 @@ import threading
 import webbrowser
 from typing import Any, Dict, List, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 import io
 import socket
+import tempfile
 import zipfile
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -549,9 +550,17 @@ def get_mobile_library():
     return {"base_dir": user_music, "playlists": playlists}
 
 
+def _remove_temp_file(file_path: str):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception:
+        pass
+
+
 @app.get("/api/mobile/download-zip")
-def download_playlist_as_zip(path: str):
-    """Streams a dynamically compressed .zip of a playlist folder for 1-tap mobile download."""
+def download_playlist_as_zip(path: str, background_tasks: BackgroundTasks):
+    """Streams a dynamically compressed .zip of a playlist folder with zero RAM overhead."""
     if not path:
         raise HTTPException(status_code=400, detail="Path parameter is required.")
 
@@ -559,29 +568,30 @@ def download_playlist_as_zip(path: str):
     if not os.path.exists(abs_path) or not os.path.isdir(abs_path):
         raise HTTPException(status_code=404, detail="Playlist folder not found.")
 
-    def zip_stream():
-        buffer = io.BytesIO()
-        with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+    folder_name = os.path.basename(abs_path) or "Musify_Playlist"
+    tmp_fd, tmp_zip_path = tempfile.mkstemp(suffix=".zip", prefix="musify_zip_")
+    os.close(tmp_fd)
+
+    try:
+        with zipfile.ZipFile(tmp_zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             for root, _, files in os.walk(abs_path):
                 for f in files:
                     full_p = os.path.join(root, f)
                     rel_p = os.path.relpath(full_p, abs_path)
                     zf.write(full_p, arcname=rel_p)
-        buffer.seek(0)
-        while True:
-            chunk = buffer.read(64 * 1024)
-            if not chunk:
-                break
-            yield chunk
+    except Exception as e:
+        _remove_temp_file(tmp_zip_path)
+        raise HTTPException(status_code=500, detail=f"Failed to generate zip: {e}")
 
-    folder_name = os.path.basename(abs_path) or "Musify_Playlist"
+    background_tasks.add_task(_remove_temp_file, tmp_zip_path)
     encoded_name = requests.utils.quote(f"{folder_name}.zip")
-    return StreamingResponse(
-        zip_stream(),
+    return FileResponse(
+        tmp_zip_path,
         media_type="application/zip",
+        filename=f"{folder_name}.zip",
         headers={
             "Content-Disposition": f'attachment; filename="{folder_name}.zip"; filename*=UTF-8\'\'{encoded_name}',
-        }
+        },
     )
 
 
