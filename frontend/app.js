@@ -26,6 +26,15 @@ const state = {
   isPlayingHQ: false,
   previewDuration: 30, // Default preview clip length
 
+  // Spotify Account & Library State
+  auth: {
+    isAuthenticated: false,
+    user: null,
+    playlists: [],
+    likedSongsData: null,
+  },
+  activeNavTab: "search",
+
   // Progressive Rendering & Performance
   filteredTracks: [],
   renderedTrackCount: 0,
@@ -40,6 +49,39 @@ const state = {
 
 // DOM Elements
 const elements = {
+  // Spotify Account & Library Elements
+  btnSpotifyAccount: document.getElementById("btn-spotify-account"),
+  spotifyNavAvatar: document.getElementById("spotify-nav-avatar"),
+  spotifyUserName: document.getElementById("spotify-user-name"),
+  tabSearch: document.getElementById("tab-search"),
+  tabLibrary: document.getElementById("tab-library"),
+  libraryStatusBadge: document.getElementById("library-status-badge"),
+  librarySection: document.getElementById("library-section"),
+  searchSection: document.getElementById("search-section"),
+  libraryLoggedOut: document.getElementById("library-logged-out"),
+  libraryLoggedIn: document.getElementById("library-logged-in"),
+  btnLibraryConnect: document.getElementById("btn-library-connect"),
+  btnLibraryManualAuth: document.getElementById("btn-library-manual-auth"),
+  userAvatar: document.getElementById("user-avatar"),
+  userDisplayName: document.getElementById("user-display-name"),
+  userBadge: document.getElementById("user-badge"),
+  userEmail: document.getElementById("user-email"),
+  userFollowers: document.getElementById("user-followers"),
+  userProduct: document.getElementById("user-product"),
+  btnRefreshLibrary: document.getElementById("btn-refresh-library"),
+  btnSpotifyLogout: document.getElementById("btn-spotify-logout"),
+  likedCountText: document.getElementById("liked-count-text"),
+  btnDownloadLiked: document.getElementById("btn-download-liked"),
+  btnInspectLiked: document.getElementById("btn-inspect-liked"),
+  libraryPlaylistsCount: document.getElementById("library-playlists-count"),
+  libraryFilterInput: document.getElementById("library-filter-input"),
+  libraryPlaylistsGrid: document.getElementById("library-playlists-grid"),
+  spotifyAuthModal: document.getElementById("spotify-auth-modal"),
+  btnCloseAuthModal: document.getElementById("btn-close-auth-modal"),
+  btnModalOauthLogin: document.getElementById("btn-modal-oauth-login"),
+  inputManualToken: document.getElementById("input-manual-token"),
+  btnSubmitManualToken: document.getElementById("btn-submit-manual-token"),
+
   fetchForm: document.getElementById("fetch-form"),
   playlistUrlInput: document.getElementById("playlist-url"),
   btnPasteClipboard: document.getElementById("btn-paste-clipboard"),
@@ -182,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
   setupKeyboardShortcuts();
   loadRecentPlaylists();
   setupClipboardAutoDetect();
+  checkSpotifyAuth();
 });
 
 // Toast Notification Helper
@@ -410,6 +453,65 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Navigation Tabs (Search vs Library)
+  if (elements.tabSearch) {
+    elements.tabSearch.addEventListener("click", () => switchNavTab("search"));
+  }
+  if (elements.tabLibrary) {
+    elements.tabLibrary.addEventListener("click", () => switchNavTab("library"));
+  }
+
+  // Spotify Account Button in Navbar
+  if (elements.btnSpotifyAccount) {
+    elements.btnSpotifyAccount.addEventListener("click", handleSpotifyNavClick);
+  }
+
+  // Connect & Auth Modal Triggers
+  if (elements.btnLibraryConnect) {
+    elements.btnLibraryConnect.addEventListener("click", openSpotifyAuthModal);
+  }
+  if (elements.btnLibraryManualAuth) {
+    elements.btnLibraryManualAuth.addEventListener("click", openSpotifyAuthModal);
+  }
+  if (elements.btnCloseAuthModal) {
+    elements.btnCloseAuthModal.addEventListener("click", closeSpotifyAuthModal);
+  }
+  if (elements.spotifyAuthModal) {
+    elements.spotifyAuthModal.addEventListener("click", (e) => {
+      if (e.target === elements.spotifyAuthModal) closeSpotifyAuthModal();
+    });
+  }
+  if (elements.btnModalOauthLogin) {
+    elements.btnModalOauthLogin.addEventListener("click", startSpotifyOAuth);
+  }
+  if (elements.btnSubmitManualToken) {
+    elements.btnSubmitManualToken.addEventListener("click", handleManualTokenSubmit);
+  }
+
+  // Spotify Logout & Refresh
+  if (elements.btnSpotifyLogout) {
+    elements.btnSpotifyLogout.addEventListener("click", handleSpotifyLogout);
+  }
+  if (elements.btnRefreshLibrary) {
+    elements.btnRefreshLibrary.addEventListener("click", () => checkSpotifyAuth(true));
+  }
+
+  // Liked Songs 1-Click Actions
+  if (elements.btnDownloadLiked) {
+    elements.btnDownloadLiked.addEventListener("click", () => downloadLikedSongs(true));
+  }
+  if (elements.btnInspectLiked) {
+    elements.btnInspectLiked.addEventListener("click", () => downloadLikedSongs(false));
+  }
+
+  // Library Search / Filter
+  if (elements.libraryFilterInput) {
+    elements.libraryFilterInput.addEventListener("input", filterUserPlaylists);
+  }
+
+  // Listen for popup OAuth callback
+  window.addEventListener("message", handleSpotifyAuthMessage);
 }
 
 // Native Windows Folder Picker
@@ -661,6 +763,10 @@ function setupKeyboardShortcuts() {
         elements.settingsPanel.classList.add("hidden");
         return;
       }
+      if (elements.spotifyAuthModal && !elements.spotifyAuthModal.classList.contains("hidden")) {
+        closeSpotifyAuthModal();
+        return;
+      }
       if (elements.completionModal && !elements.completionModal.classList.contains("hidden")) {
         elements.completionModal.classList.add("hidden");
         return;
@@ -730,8 +836,10 @@ async function fetchPlaylistData(url) {
     saveRecentPlaylist(data, url);
     renderPlaylistView(data);
     showToast(`Loaded "${data.title}" (${data.total_tracks} tracks)`, "success");
+    return data;
   } catch (err) {
     showToast("Error loading playlist: " + err.message, "error", 5000);
+    return null;
   } finally {
     setLoadingState(false);
   }
@@ -1563,6 +1671,392 @@ async function openCurrentDirectory() {
     }
   } catch (err) {
     alert("Could not open folder in Explorer: " + err.message);
+  }
+}
+
+// ==========================================
+// Spotify Account & Library Controllers
+// ==========================================
+
+function switchNavTab(tabName) {
+  state.activeNavTab = tabName;
+  if (tabName === "library") {
+    if (elements.tabSearch) elements.tabSearch.classList.remove("active");
+    if (elements.tabLibrary) elements.tabLibrary.classList.add("active");
+    if (elements.searchSection) elements.searchSection.classList.add("hidden");
+    if (elements.librarySection) elements.librarySection.classList.remove("hidden");
+    // If authenticated and no playlists loaded yet, load them
+    if (state.auth.isAuthenticated && state.auth.playlists.length === 0) {
+      loadUserPlaylists();
+    }
+  } else {
+    if (elements.tabLibrary) elements.tabLibrary.classList.remove("active");
+    if (elements.tabSearch) elements.tabSearch.classList.add("active");
+    if (elements.librarySection) elements.librarySection.classList.add("hidden");
+    if (elements.searchSection) elements.searchSection.classList.remove("hidden");
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
+function handleSpotifyNavClick() {
+  if (state.auth.isAuthenticated) {
+    switchNavTab("library");
+  } else {
+    openSpotifyAuthModal();
+  }
+}
+
+function openSpotifyAuthModal() {
+  if (elements.spotifyAuthModal) {
+    elements.spotifyAuthModal.classList.remove("hidden");
+    if (window.lucide) window.lucide.createIcons();
+  }
+}
+
+function closeSpotifyAuthModal() {
+  if (elements.spotifyAuthModal) {
+    elements.spotifyAuthModal.classList.add("hidden");
+  }
+}
+
+async function startSpotifyOAuth() {
+  try {
+    const res = await fetch("/api/spotify/auth/login_url");
+    const data = await res.json();
+    if (data.url) {
+      const width = 560;
+      const height = 720;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+      window.open(
+        data.url,
+        "SpotifyLoginPopup",
+        `width=${width},height=${height},left=${left},top=${top},status=0,toolbar=0,menubar=0,location=0`
+      );
+    } else {
+      showToast("Could not generate Spotify login URL", "error");
+    }
+  } catch (err) {
+    showToast("OAuth login error: " + err.message, "error");
+  }
+}
+
+function handleSpotifyAuthMessage(event) {
+  if (event.data && event.data.type === "SPOTIFY_AUTH_SUCCESS") {
+    closeSpotifyAuthModal();
+    showToast("🎉 Spotify Account connected successfully!", "success", 4000);
+    checkSpotifyAuth(true);
+    switchNavTab("library");
+  }
+}
+
+async function handleManualTokenSubmit() {
+  const token = elements.inputManualToken ? elements.inputManualToken.value.trim() : "";
+  if (!token) {
+    showToast("Please enter an access token or raw curl token", "error");
+    return;
+  }
+  if (elements.btnSubmitManualToken) {
+    elements.btnSubmitManualToken.disabled = true;
+    elements.btnSubmitManualToken.textContent = "Connecting...";
+  }
+  try {
+    const res = await fetch("/api/spotify/auth/manual", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ access_token: token }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || "Authentication failed with provided token");
+    }
+    if (elements.inputManualToken) elements.inputManualToken.value = "";
+    closeSpotifyAuthModal();
+    showToast(`🎉 Connected as ${data.user.display_name}!`, "success", 4000);
+    checkSpotifyAuth(true);
+    switchNavTab("library");
+  } catch (err) {
+    showToast("Failed to link token: " + err.message, "error", 5000);
+  } finally {
+    if (elements.btnSubmitManualToken) {
+      elements.btnSubmitManualToken.disabled = false;
+      elements.btnSubmitManualToken.textContent = "Connect with Token";
+    }
+  }
+}
+
+async function handleSpotifyLogout() {
+  try {
+    await fetch("/api/spotify/auth/logout", { method: "POST" });
+    state.auth.isAuthenticated = false;
+    state.auth.user = null;
+    state.auth.playlists = [];
+    state.auth.likedSongsData = null;
+
+    updateAuthUI(false, null);
+    showToast("Logged out of Spotify", "info");
+  } catch (err) {
+    showToast("Logout error: " + err.message, "error");
+  }
+}
+
+async function checkSpotifyAuth(forceRefresh = false) {
+  try {
+    const res = await fetch("/api/spotify/auth/status");
+    const data = await res.json();
+    if (data.authenticated && data.user) {
+      state.auth.isAuthenticated = true;
+      state.auth.user = data.user;
+      updateAuthUI(true, data.user);
+      loadUserPlaylists(forceRefresh);
+      loadLikedSongsCount();
+    } else {
+      state.auth.isAuthenticated = false;
+      state.auth.user = null;
+      updateAuthUI(false, null);
+    }
+  } catch (err) {
+    console.error("Failed checking Spotify auth status:", err);
+  }
+}
+
+function updateAuthUI(isAuthenticated, user) {
+  if (isAuthenticated && user) {
+    if (elements.btnSpotifyAccount) {
+      elements.btnSpotifyAccount.classList.add("logged-in");
+    }
+    if (elements.spotifyUserName) {
+      elements.spotifyUserName.textContent = user.display_name || "Spotify User";
+    }
+    if (elements.spotifyNavAvatar) {
+      if (user.avatar_url) {
+        elements.spotifyNavAvatar.innerHTML = `<img src="${escapeHtml(user.avatar_url)}" class="spotify-pill-img" alt="" />`;
+      } else {
+        elements.spotifyNavAvatar.innerHTML = `<i data-lucide="user-check"></i>`;
+      }
+    }
+
+    if (elements.libraryLoggedOut) elements.libraryLoggedOut.classList.add("hidden");
+    if (elements.libraryLoggedIn) elements.libraryLoggedIn.classList.remove("hidden");
+
+    if (user.avatar_url && elements.userAvatar) {
+      elements.userAvatar.src = user.avatar_url;
+    }
+    if (elements.userDisplayName) elements.userDisplayName.textContent = user.display_name;
+    if (elements.userEmail) elements.userEmail.textContent = user.email || "";
+    if (elements.userProduct) {
+      elements.userProduct.textContent = (user.product || "free").toUpperCase();
+    }
+    if (elements.userFollowers) {
+      elements.userFollowers.textContent = `${user.followers ? user.followers.toLocaleString() : 0} followers`;
+    }
+    if (elements.libraryStatusBadge) {
+      elements.libraryStatusBadge.textContent = "CONNECTED";
+      elements.libraryStatusBadge.className = "library-badge badge-connected";
+    }
+  } else {
+    if (elements.btnSpotifyAccount) {
+      elements.btnSpotifyAccount.classList.remove("logged-in");
+    }
+    if (elements.spotifyUserName) {
+      elements.spotifyUserName.textContent = "Connect Spotify";
+    }
+    if (elements.spotifyNavAvatar) {
+      elements.spotifyNavAvatar.innerHTML = `<i data-lucide="user"></i>`;
+    }
+
+    if (elements.libraryLoggedIn) elements.libraryLoggedIn.classList.add("hidden");
+    if (elements.libraryLoggedOut) elements.libraryLoggedOut.classList.remove("hidden");
+
+    if (elements.libraryStatusBadge) {
+      elements.libraryStatusBadge.textContent = "DISCONNECTED";
+      elements.libraryStatusBadge.className = "library-badge badge-disconnected";
+    }
+  }
+  if (window.lucide) window.lucide.createIcons();
+}
+
+async function loadUserPlaylists(forceRefresh = false) {
+  if (!elements.libraryPlaylistsGrid) return;
+  elements.libraryPlaylistsGrid.innerHTML = `
+    <div class="library-loading">
+      <div class="spinner"></div>
+      <p>Loading your Spotify playlists...</p>
+    </div>
+  `;
+  try {
+    const res = await fetch(`/api/spotify/me/playlists?limit=50${forceRefresh ? '&refresh=1' : ''}`);
+    if (!res.ok) throw new Error("Could not load playlists");
+    const data = await res.json();
+    state.auth.playlists = data.playlists || data.items || [];
+    if (elements.libraryPlaylistsCount) {
+      elements.libraryPlaylistsCount.textContent = state.auth.playlists.length;
+    }
+    renderUserPlaylists(state.auth.playlists);
+  } catch (err) {
+    elements.libraryPlaylistsGrid.innerHTML = `
+      <div class="library-error">
+        <p>Failed to load playlists: ${escapeHtml(err.message)}</p>
+        <button class="btn btn-secondary btn-sm" onclick="loadUserPlaylists(true)">Retry</button>
+      </div>
+    `;
+  }
+}
+
+async function loadLikedSongsCount() {
+  try {
+    const res = await fetch("/api/spotify/me/saved-tracks?limit=1");
+    if (res.ok) {
+      const data = await res.json();
+      if (elements.likedCountText) {
+        elements.likedCountText.textContent = `${(data.total_tracks || 0).toLocaleString()} tracks saved`;
+      }
+    }
+  } catch (_) {}
+}
+
+function filterUserPlaylists() {
+  const query = (elements.libraryFilterInput ? elements.libraryFilterInput.value : "").trim().toLowerCase();
+  if (!query) {
+    renderUserPlaylists(state.auth.playlists);
+    return;
+  }
+  const filtered = state.auth.playlists.filter(
+    (p) =>
+      (p.title && p.title.toLowerCase().includes(query)) ||
+      (p.name && p.name.toLowerCase().includes(query)) ||
+      (p.owner && p.owner.toLowerCase().includes(query))
+  );
+  renderUserPlaylists(filtered);
+}
+
+function renderUserPlaylists(playlists) {
+  if (!elements.libraryPlaylistsGrid) return;
+  if (!playlists || playlists.length === 0) {
+    elements.libraryPlaylistsGrid.innerHTML = `
+      <div class="library-empty">
+        <i data-lucide="music"></i>
+        <p>No playlists found.</p>
+      </div>
+    `;
+    if (window.lucide) window.lucide.createIcons();
+    return;
+  }
+
+  let html = "";
+  playlists.forEach((pl) => {
+    const cover = pl.cover_url || "https://community.spotify.com/t5/image/serverpage/image-id/25294i2836BD1C1A311FFE/image-size/large?v=v2&px=999";
+    const plTitle = pl.title || pl.name || "Untitled Playlist";
+    const plUrl = pl.url || pl.spotify_url || `https://open.spotify.com/playlist/${pl.id}`;
+
+    html += `
+      <div class="library-card" data-id="${pl.id}" data-url="${escapeHtml(plUrl)}">
+        <div class="library-card-cover-wrap">
+          <img src="${escapeHtml(cover)}" class="library-card-cover" alt="" loading="lazy" />
+          <button class="library-card-play-btn btn-dl-quick" data-id="${pl.id}" data-url="${escapeHtml(plUrl)}" title="1-Click Download Entire Playlist">
+            <i data-lucide="download"></i>
+          </button>
+        </div>
+        <div class="library-card-info">
+          <span class="library-card-title" title="${escapeHtml(plTitle)}">${escapeHtml(plTitle)}</span>
+          <span class="library-card-meta">${pl.total_tracks} tracks • ${escapeHtml(pl.owner)}</span>
+        </div>
+        <div class="library-card-actions">
+          <button class="btn btn-secondary btn-sm btn-view-pl" data-id="${pl.id}" data-url="${escapeHtml(plUrl)}">
+            <i data-lucide="list-music"></i> View
+          </button>
+          <button class="btn btn-primary btn-sm btn-dl-pl" data-id="${pl.id}" data-url="${escapeHtml(plUrl)}">
+            <i data-lucide="download"></i> Download
+          </button>
+        </div>
+      </div>
+    `;
+  });
+
+  elements.libraryPlaylistsGrid.innerHTML = html;
+  if (window.lucide) window.lucide.createIcons();
+
+  // Attach interactive click handlers
+  elements.libraryPlaylistsGrid.querySelectorAll(".library-card").forEach((card) => {
+    const url = card.getAttribute("data-url");
+    const plObj = playlists.find((p) => (p.url === url || p.spotify_url === url));
+
+    // Clicking anywhere on card (except buttons) views the playlist
+    card.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+      if (plObj) loadLibraryPlaylist(plObj, false);
+    });
+
+    const btnView = card.querySelector(".btn-view-pl");
+    if (btnView) {
+      btnView.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (plObj) loadLibraryPlaylist(plObj, false);
+      });
+    }
+
+    const btnDl = card.querySelector(".btn-dl-pl");
+    if (btnDl) {
+      btnDl.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (plObj) loadLibraryPlaylist(plObj, true);
+      });
+    }
+
+    const btnDlQuick = card.querySelector(".btn-dl-quick");
+    if (btnDlQuick) {
+      btnDlQuick.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (plObj) loadLibraryPlaylist(plObj, true);
+      });
+    }
+  });
+}
+
+async function loadLibraryPlaylist(playlist, autoDownload = false) {
+  const plUrl = playlist.url || playlist.spotify_url || `https://open.spotify.com/playlist/${playlist.id}`;
+  switchNavTab("search");
+  elements.playlistUrlInput.value = plUrl;
+  elements.btnClearUrl.classList.remove("hidden");
+  if (elements.btnPasteClipboard) elements.btnPasteClipboard.classList.add("hidden");
+
+  const data = await fetchPlaylistData(plUrl);
+  if (data && autoDownload) {
+    setAllTracksSelection(true);
+    setTimeout(() => {
+      startDownloadProcess();
+    }, 400);
+  }
+}
+
+async function downloadLikedSongs(autoDownload = false) {
+  setLoadingState(true);
+  try {
+    showToast("Fetching your Spotify Liked Songs...", "info");
+    const res = await fetch("/api/spotify/me/saved-tracks?limit=100");
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to load Liked Songs");
+    }
+    const data = await res.json();
+    if (!data.tracks || data.tracks.length === 0) {
+      showToast("No saved tracks found in your Liked Songs", "info");
+      return;
+    }
+    state.currentPlaylist = data;
+    switchNavTab("search");
+    renderPlaylistView(data);
+    showToast(`Loaded ${data.tracks.length} Liked Songs!`, "success");
+    if (autoDownload) {
+      setAllTracksSelection(true);
+      setTimeout(() => {
+        startDownloadProcess();
+      }, 400);
+    }
+  } catch (err) {
+    showToast("Error loading Liked Songs: " + err.message, "error", 5000);
+  } finally {
+    setLoadingState(false);
   }
 }
 

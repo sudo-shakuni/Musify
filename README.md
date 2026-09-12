@@ -56,6 +56,10 @@
   - Smooth virtual batching handles massive 2,500+ track playlists without dropping frames.
   - Filter by **All**, **Selected**, **Unselected**, **Downloaded**, or **Failed** with live count badges.
   - Full **Shift-Click range selection** and filter-scoped selection.
+- **🔗 Spotify Account Integration & 1-Click Library Downloads**:
+  - Connect your personal Spotify account via 1-click OAuth (PKCE) or access token.
+  - Browse your entire Spotify library inside Musify: personal playlists, collaborative collections, and **Liked Songs**.
+  - 1-click download any personal playlist or your entire Liked Songs collection directly without needing to copy-paste URLs.
 - **📋 Automatic Clipboard Detection**:
   - Auto-detects copied Spotify links upon focusing the window for 1-click loading.
 

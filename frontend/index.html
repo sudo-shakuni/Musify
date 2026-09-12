@@ -39,6 +39,15 @@
           <span class="status-dot"></span>
           <span id="ffmpeg-status-text">Checking FFmpeg Engine...</span>
         </div>
+        <button id="btn-spotify-account" class="btn-spotify-pill" title="Spotify Account" aria-label="Spotify Account">
+          <div class="spotify-pill-icon">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.37-.73.49-1.1.25-3.01-1.84-6.8-2.26-11.26-1.24-.42.1-.84-.16-.94-.58-.1-.42.16-.84.58-.94 4.88-1.12 9.07-.64 12.47 1.41.37.24.49.73.25 1.1zm1.48-3.31c-.3.46-.92.61-1.38.31-3.46-2.13-8.73-2.75-12.82-1.51-.52.16-1.07-.14-1.23-.66-.16-.52.14-1.07.66-1.23 4.67-1.42 10.49-.72 14.46 1.71.46.3.61.92.31 1.38zm.13-3.45C15.02 8.35 8.24 8.12 4.3 9.32c-.63.19-1.3-.17-1.49-.8-.19-.63.17-1.3.8-1.49 4.54-1.38 12.01-1.11 16.66 1.65.57.34.76 1.08.42 1.65-.34.57-1.08.76-1.65.42z"/>
+            </svg>
+          </div>
+          <img id="spotify-nav-avatar" class="spotify-nav-avatar hidden" src="" alt="Avatar" />
+          <span id="spotify-user-name">Connect Spotify</span>
+        </button>
         <button id="btn-settings-toggle" class="btn-icon" title="Preferences" aria-label="Preferences">
           <i data-lucide="settings"></i>
         </button>
@@ -47,9 +56,115 @@
 
     <!-- Main Content Area -->
     <main class="main-content">
-      
+
+      <!-- Navigation Tabs (Search vs Library) -->
+      <div class="nav-tabs-wrapper">
+        <div class="nav-tabs">
+          <button type="button" id="tab-search" class="nav-tab active">
+            <i data-lucide="search"></i> URL Downloader
+          </button>
+          <button type="button" id="tab-library" class="nav-tab">
+            <i data-lucide="library"></i> Your Spotify Library
+            <span id="library-status-badge" class="badge-dot hidden"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Spotify Library Dashboard Section -->
+      <section id="library-section" class="library-section hidden">
+        <!-- Logged Out View -->
+        <div id="library-logged-out" class="library-card-auth card">
+          <div class="auth-card-icon">
+            <svg viewBox="0 0 24 24" width="48" height="48" fill="#1DB954">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.37-.73.49-1.1.25-3.01-1.84-6.8-2.26-11.26-1.24-.42.1-.84-.16-.94-.58-.1-.42.16-.84.58-.94 4.88-1.12 9.07-.64 12.47 1.41.37.24.49.73.25 1.1zm1.48-3.31c-.3.46-.92.61-1.38.31-3.46-2.13-8.73-2.75-12.82-1.51-.52.16-1.07-.14-1.23-.66-.16-.52.14-1.07.66-1.23 4.67-1.42 10.49-.72 14.46 1.71.46.3.61.92.31 1.38zm.13-3.45C15.02 8.35 8.24 8.12 4.3 9.32c-.63.19-1.3-.17-1.49-.8-.19-.63.17-1.3.8-1.49 4.54-1.38 12.01-1.11 16.66 1.65.57.34.76 1.08.42 1.65-.34.57-1.08.76-1.65.42z"/>
+            </svg>
+          </div>
+          <h2 class="auth-card-title">Link Your Spotify Account</h2>
+          <p class="auth-card-desc">Access your private playlists and Liked Songs directly inside Musify with 1-click batch downloads.</p>
+          <div class="auth-card-actions">
+            <button type="button" id="btn-library-connect" class="btn btn-spotify btn-large">
+              <i data-lucide="log-in"></i> Connect with Spotify
+            </button>
+            <button type="button" id="btn-library-manual-auth" class="btn btn-secondary">
+              <i data-lucide="key"></i> Token Login
+            </button>
+          </div>
+        </div>
+
+        <!-- Logged In Library View -->
+        <div id="library-logged-in" class="library-dashboard hidden">
+          <!-- User Profile Banner -->
+          <div class="user-profile-banner card">
+            <div class="user-profile-left">
+              <img id="user-avatar" class="user-avatar" src="" alt="Avatar" />
+              <div class="user-meta">
+                <div class="user-name-row">
+                  <span id="user-display-name" class="user-display-name">Spotify User</span>
+                  <span id="user-badge" class="badge-status-green">CONNECTED</span>
+                </div>
+                <div class="user-submeta">
+                  <span id="user-email"></span>
+                  <span class="meta-dot">•</span>
+                  <span id="user-followers">0 followers</span>
+                  <span class="meta-dot">•</span>
+                  <span id="user-product" class="badge-mini">Free</span>
+                </div>
+              </div>
+            </div>
+            <div class="user-profile-actions">
+              <button type="button" id="btn-refresh-library" class="btn btn-secondary btn-sm" title="Refresh Library">
+                <i data-lucide="refresh-cw"></i> Refresh
+              </button>
+              <button type="button" id="btn-spotify-logout" class="btn btn-outline-danger btn-sm" title="Disconnect Account">
+                <i data-lucide="log-out"></i> Disconnect
+              </button>
+            </div>
+          </div>
+
+          <!-- Liked Songs Spotlight Card -->
+          <div class="liked-songs-card card">
+            <div class="liked-songs-glow"></div>
+            <div class="liked-songs-content">
+              <div class="liked-songs-icon-box">
+                <i data-lucide="heart" class="liked-heart-icon"></i>
+              </div>
+              <div class="liked-songs-info">
+                <span class="liked-badge">FAVORITES</span>
+                <h3 class="liked-title">Liked Songs</h3>
+                <p id="liked-count-text" class="liked-desc">Loading your saved tracks...</p>
+              </div>
+            </div>
+            <div class="liked-songs-actions">
+              <button type="button" id="btn-download-liked" class="btn btn-spotify btn-large" title="Download all Liked Songs">
+                <i data-lucide="arrow-down-circle"></i> Download Liked Songs
+              </button>
+              <button type="button" id="btn-inspect-liked" class="btn btn-secondary" title="View track list">
+                <i data-lucide="list"></i> View Tracks
+              </button>
+            </div>
+          </div>
+
+          <!-- User Playlists Section -->
+          <div class="library-playlists-header">
+            <div class="section-heading">
+              <h2 class="library-section-title">Your Playlists</h2>
+              <span id="library-playlists-count" class="badge-pill">0 Playlists</span>
+            </div>
+            <div class="library-search-box">
+              <i data-lucide="search" class="lib-search-icon"></i>
+              <input type="text" id="library-filter-input" placeholder="Filter your playlists..." />
+            </div>
+          </div>
+
+          <!-- Playlists Grid -->
+          <div id="library-playlists-grid" class="library-playlists-grid">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
       <!-- Input Section -->
-      <section class="search-section">
+      <section id="search-section" class="search-section">
         <!-- Auto-Detected Clipboard Banner -->
         <div id="clipboard-banner" class="clipboard-banner card hidden">
           <div class="clipboard-banner-left">
@@ -452,6 +567,53 @@
           <button id="btn-modal-close" class="btn btn-secondary">
             Close
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Spotify Connect & Auth Modal -->
+    <div id="spotify-auth-modal" class="modal-overlay hidden">
+      <div class="modal-card auth-modal-card">
+        <div class="modal-header">
+          <div class="auth-modal-title-row">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="#1DB954">
+              <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.37-.73.49-1.1.25-3.01-1.84-6.8-2.26-11.26-1.24-.42.1-.84-.16-.94-.58-.1-.42.16-.84.58-.94 4.88-1.12 9.07-.64 12.47 1.41.37.24.49.73.25 1.1zm1.48-3.31c-.3.46-.92.61-1.38.31-3.46-2.13-8.73-2.75-12.82-1.51-.52.16-1.07-.14-1.23-.66-.16-.52.14-1.07.66-1.23 4.67-1.42 10.49-.72 14.46 1.71.46.3.61.92.31 1.38zm.13-3.45C15.02 8.35 8.24 8.12 4.3 9.32c-.63.19-1.3-.17-1.49-.8-.19-.63.17-1.3.8-1.49 4.54-1.38 12.01-1.11 16.66 1.65.57.34.76 1.08.42 1.65-.34.57-1.08.76-1.65.42z"/>
+            </svg>
+            <h2 class="modal-title">Link Spotify Account</h2>
+          </div>
+          <button type="button" id="btn-close-auth-modal" class="btn-icon" title="Close" aria-label="Close modal">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+
+        <div class="auth-modal-body">
+          <!-- Method 1: 1-Click OAuth -->
+          <div class="auth-method-card active">
+            <div class="auth-method-header">
+              <span class="auth-badge-recommended">RECOMMENDED</span>
+              <h3 class="auth-method-title">1-Click Browser Authorization</h3>
+              <p class="auth-method-desc">Log into Spotify in your browser to grant Musify read access to your library.</p>
+            </div>
+            <button type="button" id="btn-modal-oauth-login" class="btn btn-spotify btn-block btn-large">
+              <i data-lucide="external-link"></i> Continue with Spotify
+            </button>
+          </div>
+
+          <div class="auth-divider">
+            <span>OR CONNECT WITH ACCESS TOKEN</span>
+          </div>
+
+          <!-- Method 2: Manual Token -->
+          <div class="auth-method-card">
+            <h3 class="auth-method-title">Enter Spotify Access Token</h3>
+            <p class="auth-method-desc">Paste an OAuth access token from Spotify Developer Console or Web Player.</p>
+            <div class="manual-token-input-row">
+              <input type="password" id="input-manual-token" placeholder="Bearer BQC... (Spotify access token)" autocomplete="off" />
+              <button type="button" id="btn-submit-manual-token" class="btn btn-secondary">
+                Connect
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

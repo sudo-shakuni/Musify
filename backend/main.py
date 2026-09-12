@@ -24,6 +24,7 @@ from pydantic import BaseModel
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from backend.downloader import download_manager, open_folder_in_explorer
+from backend.spotify_auth import spotify_auth
 from backend.spotify_meta import fetch_metadata
 from setup_ffmpeg import ensure_ffmpeg
 
@@ -293,6 +294,108 @@ def stream_audio_file(path: str):
     }
     media_type = media_types.get(ext, "application/octet-stream")
     return FileResponse(abs_path, media_type=media_type, filename=os.path.basename(abs_path))
+
+
+# ==========================================
+# Spotify Account Linking & Library Endpoints
+# ==========================================
+
+class ManualAuthRequest(BaseModel):
+    access_token: Optional[str] = None
+    token: Optional[str] = None
+
+
+@app.get("/api/spotify/auth/status")
+def get_spotify_auth_status():
+    is_auth = spotify_auth.is_authenticated()
+    user = spotify_auth.get_user_info() if is_auth else None
+    return {"authenticated": is_auth, "user": user}
+
+
+@app.get("/api/spotify/auth/login_url")
+def get_spotify_login_url(client_id: Optional[str] = None, redirect_uri: Optional[str] = None):
+    try:
+        res = spotify_auth.create_login_url(client_id=client_id, redirect_uri=redirect_uri)
+        return res
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/spotify/callback")
+def spotify_oauth_callback(code: Optional[str] = None, state: Optional[str] = None, error: Optional[str] = None):
+    if error:
+        return HTMLResponse(f"<h3 style='color:#ff5555;'>Spotify Authentication Error: {error}</h3><p style='color:#888;'>You may close this window.</p>")
+    if not code or not state:
+        return HTMLResponse("<h3 style='color:#ff5555;'>Missing code or state parameter.</h3><p style='color:#888;'>You may close this window.</p>")
+
+    try:
+        user_info = spotify_auth.exchange_code(code, state)
+        user_name = user_info.get("display_name", "Spotify User")
+        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Connected to Spotify</title>
+    <style>
+        body {{ background: #121212; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+        .card {{ background: #181818; padding: 40px; border-radius: 12px; text-align: center; border: 1px solid #282828; max-width: 440px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); }}
+        h2 {{ color: #1DB954; margin-top: 0; }}
+        p {{ color: #b3b3b3; line-height: 1.5; }}
+        .success-badge {{ background: #1DB95420; color: #1DB954; padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; display: inline-block; margin-bottom: 12px; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="success-badge">CONNECTED</div>
+        <h2>Welcome, {user_name}!</h2>
+        <p>Your Spotify account has been successfully linked to Musify.</p>
+        <p style="font-size: 13px; color: #777;">This window will close automatically...</p>
+        <script>
+            if (window.opener) {{
+                window.opener.postMessage({{ type: 'SPOTIFY_AUTH_SUCCESS', user: {json.dumps(user_info)} }}, '*');
+                setTimeout(function() {{ window.close(); }}, 1200);
+            }}
+        </script>
+    </div>
+</body>
+</html>"""
+        return HTMLResponse(html)
+    except Exception as e:
+        return HTMLResponse(f"<h3 style='color:#ff5555;'>Authentication Failed: {e}</h3><p style='color:#888;'>Please return to Musify and try again.</p>")
+
+
+@app.post("/api/spotify/auth/manual")
+def set_manual_spotify_token(req: ManualAuthRequest):
+    tok = req.access_token or req.token
+    if not tok:
+        raise HTTPException(status_code=400, detail="access_token or token is required.")
+    try:
+        user_info = spotify_auth.set_manual_token(tok)
+        return {"success": True, "user": user_info}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.post("/api/spotify/auth/logout")
+def spotify_logout():
+    spotify_auth.logout()
+    return {"success": True}
+
+
+@app.get("/api/spotify/me/playlists")
+def get_my_spotify_playlists(limit: int = 50, offset: int = 0):
+    try:
+        return spotify_auth.get_user_playlists(limit=limit, offset=offset)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@app.get("/api/spotify/me/saved-tracks")
+def get_my_saved_tracks(limit: int = 50, offset: int = 0):
+    try:
+        return spotify_auth.get_liked_songs_metadata(limit=limit, offset=offset)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 # Serve Frontend static assets

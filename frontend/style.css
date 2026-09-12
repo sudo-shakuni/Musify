@@ -1904,4 +1904,542 @@ body {
   .queue-drawer { left: 12px; right: 12px; width: auto; bottom: 85px; }
 }
 
+/* ==========================================================================
+   Spotify Account Linking & Library Dashboard Styles
+   ========================================================================== */
 
+.btn-spotify-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(29, 185, 84, 0.12);
+  border: 1px solid rgba(29, 185, 84, 0.35);
+  color: #1ed760;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-spotify-pill:hover {
+  background: rgba(29, 185, 84, 0.25);
+  border-color: #1ed760;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(29, 185, 84, 0.25);
+}
+
+.spotify-pill-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spotify-nav-avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #1ed760;
+}
+
+.nav-tabs-wrapper {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0 24px;
+}
+
+.nav-tabs {
+  display: flex;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-color);
+  padding: 4px;
+  border-radius: var(--radius-pill);
+  gap: 6px;
+}
+
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.nav-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-tab.active {
+  background: rgba(29, 185, 84, 0.2);
+  color: #1ed760;
+  border: 1px solid rgba(29, 185, 84, 0.4);
+}
+
+.badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1ed760;
+  display: inline-block;
+}
+
+/* Library Section */
+.library-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.library-card-auth {
+  text-align: center;
+  padding: 50px 30px;
+  background: linear-gradient(180deg, rgba(29, 185, 84, 0.08) 0%, rgba(18, 18, 18, 0.95) 100%);
+  border: 1px solid rgba(29, 185, 84, 0.25);
+  border-radius: 16px;
+  max-width: 620px;
+  margin: 20px auto;
+}
+
+.auth-card-icon {
+  display: inline-flex;
+  padding: 16px;
+  border-radius: 50%;
+  background: rgba(29, 185, 84, 0.1);
+  margin-bottom: 18px;
+}
+
+.auth-card-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin-bottom: 10px;
+}
+
+.auth-card-desc {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  max-width: 480px;
+  margin: 0 auto 24px;
+}
+
+.auth-card-actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.btn-spotify {
+  background: #1db954;
+  color: #000000;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: var(--transition);
+}
+
+.btn-spotify:hover {
+  background: #1ed760;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(29, 185, 84, 0.4);
+}
+
+/* User Profile Banner */
+.user-profile-banner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 24px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+}
+
+.user-profile-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.user-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #1ed760;
+}
+
+.user-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-display-name {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.badge-status-green {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1ed760;
+  border: 1px solid rgba(29, 185, 84, 0.4);
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+}
+
+.user-submeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+
+.meta-dot {
+  color: rgba(255, 255, 255, 0.2);
+}
+
+.user-profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-outline-danger {
+  background: transparent;
+  border: 1px solid rgba(240, 80, 80, 0.4);
+  color: #ff6b6b;
+  border-radius: var(--radius-pill);
+  padding: 6px 14px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-outline-danger:hover {
+  background: rgba(240, 80, 80, 0.15);
+  border-color: #ff6b6b;
+}
+
+/* Liked Songs Spotlight Card */
+.liked-songs-card {
+  position: relative;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 32px 36px;
+  background: linear-gradient(135deg, #450af5 0%, #8e8ee5 100%);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(69, 10, 245, 0.3);
+}
+
+.liked-songs-content {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  z-index: 1;
+}
+
+.liked-songs-icon-box {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.liked-heart-icon {
+  width: 36px;
+  height: 36px;
+  fill: #ffffff;
+  color: #ffffff;
+}
+
+.liked-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.08em;
+}
+
+.liked-title {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 4px 0;
+}
+
+.liked-desc {
+  font-size: 0.92rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.liked-songs-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 1;
+}
+
+/* Library Playlists Grid */
+.library-playlists-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.library-section-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.library-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  width: 240px;
+}
+
+.library-search-box input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #ffffff;
+  font-size: 0.85rem;
+  width: 100%;
+}
+
+.library-playlists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 18px;
+  margin-top: 8px;
+}
+
+.playlist-grid-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  transition: var(--transition);
+  position: relative;
+}
+
+.playlist-grid-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5);
+}
+
+.playlist-card-cover-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #282828;
+  margin-bottom: 12px;
+}
+
+.playlist-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.playlist-card-download-btn {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #1ed760;
+  color: #000000;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: var(--transition);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+.playlist-grid-card:hover .playlist-card-download-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.playlist-card-download-btn:hover {
+  transform: scale(1.1);
+  background: #22e668;
+}
+
+.playlist-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.playlist-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #ffffff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.playlist-card-author {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.playlist-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.playlist-card-actions-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.playlist-card-actions-row button {
+  flex: 1;
+  font-size: 0.75rem;
+  padding: 6px 8px;
+}
+
+/* Auth Modal Specifics */
+.auth-modal-card {
+  max-width: 480px;
+}
+
+.auth-modal-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.auth-method-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--border-color);
+  padding: 18px;
+  border-radius: 12px;
+}
+
+.auth-badge-recommended {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #1ed760;
+  background: rgba(29, 185, 84, 0.15);
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  display: inline-block;
+  margin-bottom: 6px;
+}
+
+.auth-method-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.auth-method-desc {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin-bottom: 14px;
+}
+
+.auth-divider {
+  text-align: center;
+  position: relative;
+  margin: 4px 0;
+}
+
+.auth-divider span {
+  background: #181818;
+  padding: 0 12px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+}
+
+.manual-token-input-row {
+  display: flex;
+  gap: 8px;
+}
+
+.manual-token-input-row input {
+  flex: 1;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  color: #ffffff;
+  font-size: 0.82rem;
+}
