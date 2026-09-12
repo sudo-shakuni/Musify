@@ -7,20 +7,27 @@ Write-Host "🎵 Installing Musify v1.0.0 for Windows..." -ForegroundColor Green
 Write-Host "==================================================" -ForegroundColor Green
 
 $InstallDir = "$env:LOCALAPPDATA\Musify"
-$ZipUrl = "https://github.com/sudo-shakuni/Musify/releases/download/v1.0.0/Musify-v1.0.0-Windows.zip"
-$TempZip = "$env:TEMP\Musify-v1.0.0-Windows.zip"
+$ZipUrl = "https://github.com/sudo-shakuni/Musify/archive/refs/heads/main.zip"
+$TempZip = "$env:TEMP\Musify-main.zip"
+$TempExtract = "$env:TEMP\Musify-Extract"
 
-Write-Host "📥 Downloading Musify package from GitHub..." -ForegroundColor Cyan
+Write-Host "📥 Downloading latest Musify package from GitHub..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing
 
-if (Test-Path $InstallDir) {
-    Write-Host "🔄 Updating existing installation at $InstallDir..." -ForegroundColor Yellow
-} else {
+if (Test-Path $TempExtract) {
+    Remove-Item -Path $TempExtract -Recurse -Force -ErrorAction SilentlyContinue
+}
+Expand-Archive -Path $TempZip -DestinationPath $TempExtract -Force
+
+if (-not (Test-Path $InstallDir)) {
     New-Item -ItemType Directory -Path $InstallDir -Force | Out-Null
+} else {
+    Write-Host "🔄 Updating existing installation at $InstallDir..." -ForegroundColor Yellow
 }
 
-Write-Host "📦 Extracting files..." -ForegroundColor Cyan
-Expand-Archive -Path $TempZip -DestinationPath $InstallDir -Force
+Write-Host "📦 Extracting files to $InstallDir..." -ForegroundColor Cyan
+Copy-Item -Path "$TempExtract\Musify-main\*" -Destination $InstallDir -Recurse -Force
+Remove-Item -Path $TempExtract -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path $TempZip -Force -ErrorAction SilentlyContinue
 
 # Setup Python Environment & Dependencies
