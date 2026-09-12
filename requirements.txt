@@ -8,3 +8,4 @@ requests>=2.32.0
 static-ffmpeg>=3.0
 spotapi>=1.2.8
 pywebview>=5.0
+spotipy>=2.24.0

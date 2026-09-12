@@ -51,8 +51,38 @@ def open_folder_in_explorer(folder_path: str) -> bool:
         return False
 
 
-_IMAGE_CACHE: Dict[str, bytes] = {}
-_IMAGE_CACHE_LOCK = threading.Lock()
+from collections import OrderedDict
+
+_IMAGE_CACHE_MAX = 100
+
+class _BoundedImageCache:
+    """Thread-safe LRU cache for album artwork with bounded memory."""
+    def __init__(self, max_size: int = _IMAGE_CACHE_MAX):
+        self._cache: OrderedDict[str, bytes] = OrderedDict()
+        self._lock = threading.Lock()
+        self._max_size = max_size
+
+    def get(self, key: str) -> Optional[bytes]:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+                return self._cache[key]
+        return None
+
+    def put(self, key: str, value: bytes) -> None:
+        with self._lock:
+            if key in self._cache:
+                self._cache.move_to_end(key)
+            else:
+                if len(self._cache) >= self._max_size:
+                    self._cache.popitem(last=False)
+                self._cache[key] = value
+
+    def clear(self) -> None:
+        with self._lock:
+            self._cache.clear()
+
+_IMAGE_CACHE = _BoundedImageCache()
 _HTTP_SESSION = requests.Session()
 _HTTP_SESSION.headers.update({
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -77,17 +107,14 @@ def embed_metadata(
     """
     img_data = None
     if cover_url and embed_artwork:
-        with _IMAGE_CACHE_LOCK:
-            if cover_url in _IMAGE_CACHE:
-                img_data = _IMAGE_CACHE[cover_url]
+        img_data = _IMAGE_CACHE.get(cover_url)
 
         if img_data is None:
             try:
                 res = _HTTP_SESSION.get(cover_url, timeout=12)
                 if res.status_code == 200:
                     img_data = res.content
-                    with _IMAGE_CACHE_LOCK:
-                        _IMAGE_CACHE[cover_url] = img_data
+                    _IMAGE_CACHE.put(cover_url, img_data)
             except Exception:
                 pass
 
@@ -376,12 +403,21 @@ class DownloadManager:
             try:
                 temp_tmpl = os.path.join(output_dir, f"temp_{track_id}.%(ext)s")
 
+                _last_progress_emit: Dict[str, float] = {}
+                _PROGRESS_THROTTLE_SEC = 0.5
+
                 def ydl_progress_hook(d):
+                    if self.is_cancelled():
+                        raise yt_dlp.utils.DownloadCancelled("Download cancelled by user")
                     if d.get("status") == "downloading":
                         total_bytes = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
                         downloaded_bytes = d.get("downloaded_bytes") or 0
                         with bytes_lock:
                             track_bytes_downloaded[track_id] = downloaded_bytes
+                        now = time.time()
+                        if now - _last_progress_emit.get(track_id, 0) < _PROGRESS_THROTTLE_SEC:
+                            return
+                        _last_progress_emit[track_id] = now
                         if total_bytes > 0:
                             pct = int((downloaded_bytes / total_bytes) * 70) + 15
                             loop.call_soon_threadsafe(
@@ -507,6 +543,15 @@ class DownloadManager:
                     {"track_id": track_id, "status": "failed", "progress": 0, "message": str(err)},
                 )
                 broadcast_progress_snapshot()
+            finally:
+                # Clean up any leftover temp files
+                for pattern_ext in [audio_format, 'webm', 'opus', 'm4a', 'part', 'ytdl']:
+                    temp_path = os.path.join(output_dir, f"temp_{track_id}.{pattern_ext}")
+                    if os.path.exists(temp_path):
+                        try:
+                            os.remove(temp_path)
+                        except Exception:
+                            pass
 
         # Run concurrent downloads safely with ThreadPoolExecutor
         with concurrent.futures.ThreadPoolExecutor(max_workers=concurrency) as executor:

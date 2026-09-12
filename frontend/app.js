@@ -378,7 +378,7 @@ function setupEventListeners() {
 
   // In-Playlist Filter Listener
   if (elements.trackFilterInput) {
-    elements.trackFilterInput.addEventListener("input", filterTracks);
+    elements.trackFilterInput.addEventListener("input", debounce(filterTracks, 150));
   }
   if (elements.btnClearFilter) {
     elements.btnClearFilter.addEventListener("click", () => {
@@ -507,7 +507,7 @@ function setupEventListeners() {
 
   // Library Search / Filter
   if (elements.libraryFilterInput) {
-    elements.libraryFilterInput.addEventListener("input", filterUserPlaylists);
+    elements.libraryFilterInput.addEventListener("input", debounce(filterUserPlaylists, 200));
   }
 
   // Listen for popup OAuth callback
@@ -2060,7 +2060,15 @@ async function downloadLikedSongs(autoDownload = false) {
   }
 }
 
-// Utility Helpers
+// Debounce Helper
+function debounce(fn, delay) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
 function escapeHtml(text) {
   if (!text) return "";
   return String(text)

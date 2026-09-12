@@ -480,6 +480,11 @@ def fetch_metadata(
     now = time.time()
 
     with _META_CACHE_LOCK:
+        # Evict expired entries
+        expired_keys = [k for k, (ts, _) in _META_CACHE.items() if now - ts >= _CACHE_TTL]
+        for k in expired_keys:
+            del _META_CACHE[k]
+        # Check cache
         if cache_key in _META_CACHE:
             ts, cached_data = _META_CACHE[cache_key]
             if now - ts < _CACHE_TTL:
@@ -561,6 +566,10 @@ def fetch_metadata(
 
     if result:
         with _META_CACHE_LOCK:
+            # Cap cache at 50 entries
+            if len(_META_CACHE) >= 50:
+                oldest_key = min(_META_CACHE, key=lambda k: _META_CACHE[k][0])
+                del _META_CACHE[oldest_key]
             _META_CACHE[cache_key] = (now, result)
 
     return result

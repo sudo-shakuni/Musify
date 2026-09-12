@@ -40,6 +40,7 @@ app.add_middleware(
 )
 
 FRONTEND_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PUBLIC_TUNNEL_URL: Optional[str] = None
 _TUNNEL_PROCESS: Optional[subprocess.Popen] = None
@@ -158,7 +159,7 @@ async def start_download(req: DownloadStartRequest):
     if not req.tracks:
         raise HTTPException(status_code=400, detail="No tracks selected for download.")
 
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     download_manager.start_download_job(
         playlist_title=req.playlist_title,
         tracks=req.tracks,

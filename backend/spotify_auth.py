@@ -84,6 +84,7 @@ class SpotifyAuthManager:
 
     def __init__(self):
         self._lock = threading.Lock()
+        self._refresh_lock = threading.Lock()
         self.session_file = get_auth_storage_path()
         self.auth_data: Dict[str, Any] = self._load_session()
         self.pending_states: Dict[str, Dict[str, Any]] = {}
@@ -100,10 +101,18 @@ class SpotifyAuthManager:
     def _save_session(self) -> None:
         with self._lock:
             try:
-                with open(self.session_file, "w", encoding="utf-8") as f:
+                tmp_path = self.session_file + ".tmp"
+                with open(tmp_path, "w", encoding="utf-8") as f:
                     json.dump(self.auth_data, f, indent=2)
+                os.replace(tmp_path, self.session_file)
             except Exception as e:
                 print(f"[Auth] Error saving session: {e}")
+                # Clean up tmp file if it exists
+                try:
+                    if os.path.exists(tmp_path):
+                        os.remove(tmp_path)
+                except Exception:
+                    pass
 
     def is_authenticated(self) -> bool:
         with self._lock:
@@ -223,11 +232,17 @@ class SpotifyAuthManager:
 
         # If expired or expiring within 60 seconds, refresh
         if time.time() + 60 >= expires_at and refresh_token:
-            try:
-                refreshed = self._refresh_access_token(client_id, refresh_token)
-                return refreshed
-            except Exception as e:
-                print(f"[Auth] Token refresh failed: {e}")
+            with self._refresh_lock:
+                # Double-check after acquiring lock (another thread may have refreshed)
+                with self._lock:
+                    expires_at = self.auth_data.get("expires_at", 0)
+                    access_token = self.auth_data.get("access_token")
+                if time.time() + 60 >= expires_at:
+                    try:
+                        refreshed = self._refresh_access_token(client_id, refresh_token)
+                        return refreshed
+                    except Exception as e:
+                        print(f"[Auth] Token refresh failed: {e}")
 
         return access_token
 

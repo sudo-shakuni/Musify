@@ -2443,3 +2443,322 @@ body {
   color: #ffffff;
   font-size: 0.82rem;
 }
+/* ==========================================================================
+   Library Card Grid — Playlist Cards
+   ========================================================================== */
+
+.library-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  flex-direction: column;
+}
+
+.library-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.library-card-cover-wrap {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+.library-card-cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.library-card:hover .library-card-cover {
+  transform: scale(1.05);
+  filter: brightness(0.7);
+}
+
+.library-card-play-btn {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--spotify-green);
+  color: #000;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.25s ease, transform 0.25s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  z-index: 2;
+}
+
+.library-card-play-btn svg,
+.library-card-play-btn i {
+  width: 18px;
+  height: 18px;
+}
+
+.library-card:hover .library-card-play-btn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.library-card-play-btn:hover {
+  background: var(--spotify-green-hover);
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px var(--spotify-green-glow);
+}
+
+.library-card-info {
+  padding: 12px 14px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 48px;
+}
+
+.library-card-title {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+
+.library-card-meta {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library-card-actions {
+  padding: 8px 14px 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.library-card-actions .btn {
+  flex: 1;
+  font-size: 0.75rem;
+  padding: 6px 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: var(--radius-md);
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: var(--transition);
+}
+
+.library-card-actions .btn svg,
+.library-card-actions .btn i {
+  width: 13px;
+  height: 13px;
+}
+
+.library-card-actions .btn-secondary {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text-secondary);
+}
+
+.library-card-actions .btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-primary);
+}
+
+.library-card-actions .btn-primary {
+  background: var(--spotify-green);
+  color: #000;
+}
+
+.library-card-actions .btn-primary:hover {
+  background: var(--spotify-green-hover);
+  box-shadow: 0 2px 8px var(--spotify-green-glow);
+}
+
+/* ==========================================================================
+   Library States — Loading, Empty, Error
+   ========================================================================== */
+
+.library-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 60px 20px;
+  grid-column: 1 / -1;
+  color: var(--text-secondary);
+}
+
+.library-loading .spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--spotify-green);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.library-loading p {
+  font-size: 0.85rem;
+}
+
+.library-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 60px 20px;
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+}
+
+.library-empty svg,
+.library-empty i {
+  width: 40px;
+  height: 40px;
+  opacity: 0.4;
+}
+
+.library-empty p {
+  font-size: 0.85rem;
+}
+
+.library-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px 20px;
+  grid-column: 1 / -1;
+  color: var(--status-failed);
+  text-align: center;
+}
+
+.library-error p {
+  font-size: 0.85rem;
+}
+
+.library-error .btn {
+  margin-top: 8px;
+}
+
+/* ==========================================================================
+   Library Badges — Connected / Disconnected
+   ========================================================================== */
+
+.library-badge {
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  display: inline-block;
+}
+
+.badge-connected {
+  background: rgba(29, 185, 84, 0.15);
+  color: #1DB954;
+}
+
+.badge-disconnected {
+  background: rgba(229, 62, 62, 0.12);
+  color: #e53e3e;
+}
+
+/* ==========================================================================
+   Spotify Nav Pill Avatar
+   ========================================================================== */
+
+.spotify-pill-img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--spotify-green);
+}
+
+/* ==========================================================================
+   Accessibility — Focus-Visible
+   ========================================================================== */
+
+:focus-visible {
+  outline: 2px solid var(--spotify-green);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--spotify-green);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--spotify-green-glow);
+}
+
+.track-checkbox:focus-visible {
+  outline: 2px solid var(--spotify-green);
+  outline-offset: 1px;
+}
+
+/* ==========================================================================
+   Smooth Tab Transitions
+   ========================================================================== */
+
+#search-section,
+#library-section {
+  animation: fadeSlideIn 0.25s ease-out;
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Library playlists grid layout */
+#library-playlists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 768px) {
+  #library-playlists-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+}
+
