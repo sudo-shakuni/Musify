@@ -1861,8 +1861,19 @@ async function startGoogleOrBrowserAuth() {
     });
     const data = await res.json();
 
-    if (!data.success) {
+    if (!data.success || !data.url) {
       throw new Error(data.detail || "Failed to launch browser authentication");
+    }
+
+    // Open Spotify OAuth in foreground browser window
+    const authWindow = window.open(
+      data.url,
+      "SpotifyAuth",
+      "width=520,height=720,menubar=no,toolbar=no,location=yes,status=no"
+    );
+    if (!authWindow || authWindow.closed || typeof authWindow.closed === "undefined") {
+      // If popup blocker blocked it, open in new tab
+      window.open(data.url, "_blank");
     }
 
     // Start polling status every 1.5s for completion
