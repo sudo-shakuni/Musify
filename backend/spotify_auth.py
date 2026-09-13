@@ -246,18 +246,20 @@ class SpotifyAuthManager:
         with self._lock:
             return self.auth_data.get("user")
 
-    def create_login_url(self, client_id: Optional[str] = None, redirect_uri: Optional[str] = None) -> Dict[str, str]:
+    def create_login_url(self, client_id: Optional[str] = None, redirect_uri: Optional[str] = None, client_secret: Optional[str] = None) -> Dict[str, str]:
         """Generates Spotify OAuth URL (uses standard OAuth for SpotDL client, PKCE for public clients)."""
         cid = client_id.strip() if client_id else self.auth_data.get("client_id") or FALLBACK_CLIENT_ID
+        csec = client_secret.strip() if client_secret else self.auth_data.get("client_secret")
         r_uri = redirect_uri or DEFAULT_REDIRECT_URI
         state = secrets.token_hex(16)
         is_spotdl = (cid == FALLBACK_CLIENT_ID)
 
-        code_verifier, code_challenge = (None, None) if is_spotdl else _generate_pkce_pair()
+        code_verifier, code_challenge = (None, None) if (is_spotdl or csec) else _generate_pkce_pair()
 
         with self._lock:
             self.pending_states[state] = {
                 "client_id": cid,
+                "client_secret": csec,
                 "redirect_uri": r_uri,
                 "code_verifier": code_verifier,
                 "created_at": time.time(),
@@ -278,16 +280,17 @@ class SpotifyAuthManager:
         url = f"https://accounts.spotify.com/authorize?{encoded_params}"
         return {"url": url, "state": state}
 
-    def launch_browser_auth(self, client_id: Optional[str] = None, redirect_uri: Optional[str] = None) -> Dict[str, str]:
+    def launch_browser_auth(self, client_id: Optional[str] = None, redirect_uri: Optional[str] = None, client_secret: Optional[str] = None) -> Dict[str, str]:
         """
         Starts port 9900 callback listener and launches the official Spotify
         authorization URL in the user's default system browser (Chrome/Edge/Firefox).
         Enables seamless 'Continue with Google' without embedded webview blocks.
         """
         cid = client_id.strip() if client_id else self.auth_data.get("client_id") or FALLBACK_CLIENT_ID
+        csec = client_secret.strip() if client_secret else self.auth_data.get("client_secret")
         r_uri = redirect_uri or DEFAULT_REDIRECT_URI
 
-        res = self.create_login_url(client_id=cid, redirect_uri=r_uri)
+        res = self.create_login_url(client_id=cid, redirect_uri=r_uri, client_secret=csec)
         auth_url = res["url"]
 
         if "127.0.0.1:9900" in r_uri or ":9900" in r_uri:
@@ -305,11 +308,13 @@ class SpotifyAuthManager:
             # Fallback state data if opened in external window
             state_data = {
                 "client_id": self.auth_data.get("client_id") or FALLBACK_CLIENT_ID,
+                "client_secret": self.auth_data.get("client_secret"),
                 "redirect_uri": DEFAULT_REDIRECT_URI,
                 "code_verifier": None,
             }
 
         client_id = state_data["client_id"]
+        client_secret = state_data.get("client_secret") or (FALLBACK_CLIENT_SECRET if client_id == FALLBACK_CLIENT_ID else None)
         redirect_uri = state_data["redirect_uri"]
         code_verifier = state_data.get("code_verifier")
 
@@ -325,8 +330,8 @@ class SpotifyAuthManager:
         token_url = "https://accounts.spotify.com/api/token"
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
 
-        if client_id == FALLBACK_CLIENT_ID:
-            b64_auth = base64.b64encode(f"{FALLBACK_CLIENT_ID}:{FALLBACK_CLIENT_SECRET}".encode()).decode()
+        if client_secret:
+            b64_auth = base64.b64encode(f"{client_id}:{client_secret}".encode()).decode()
             headers["Authorization"] = f"Basic {b64_auth}"
         else:
             data["client_id"] = client_id
@@ -346,6 +351,7 @@ class SpotifyAuthManager:
         with self._lock:
             self.auth_data = {
                 "client_id": client_id,
+                "client_secret": client_secret,
                 "access_token": access_token,
                 "refresh_token": refresh_token,
                 "expires_at": time.time() + expires_in,

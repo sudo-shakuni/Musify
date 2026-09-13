@@ -335,6 +335,7 @@ def get_spotify_auth_status():
 
 class BrowserAuthRequest(BaseModel):
     client_id: Optional[str] = None
+    client_secret: Optional[str] = None
     redirect_uri: Optional[str] = None
 
 
@@ -346,8 +347,9 @@ def launch_browser_spotify_auth(payload: Optional[BrowserAuthRequest] = None):
     """
     try:
         cid = payload.client_id if payload else None
+        csec = payload.client_secret if payload else None
         r_uri = payload.redirect_uri if payload else None
-        res = spotify_auth.launch_browser_auth(client_id=cid, redirect_uri=r_uri)
+        res = spotify_auth.launch_browser_auth(client_id=cid, redirect_uri=r_uri, client_secret=csec)
         return {"success": True, "url": res["url"], "state": res["state"]}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

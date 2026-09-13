@@ -691,6 +691,35 @@
               <span>Browser opened! Complete login in your browser — this window will link automatically.</span>
             </div>
           </div>
+
+          <!-- Method 3: Custom Developer App (Never Rate Limited) -->
+          <div class="auth-method-card" style="margin-top: 14px;">
+            <h3 class="auth-method-title">🔑 Custom Spotify App (Guaranteed No Rate Limits)</h3>
+            <p class="auth-method-desc" style="margin-bottom: 10px;">
+              Spotify's shared app is currently hitting daily quota limits. To load your real name, profile photo, and private library with 100% reliability, you can use your own free app:
+            </p>
+            <div class="auth-steps">
+              <div class="auth-step">
+                <span class="step-num">1</span>
+                <span>Open <a href="https://developer.spotify.com/dashboard" target="_blank" style="color: #1db954; text-decoration: underline;">developer.spotify.com/dashboard</a> and click <strong>Create App</strong></span>
+              </div>
+              <div class="auth-step">
+                <span class="step-num">2</span>
+                <span>Set Redirect URI to: <code>http://127.0.0.1:9900/</code> and click Save</span>
+              </div>
+              <div class="auth-step">
+                <span class="step-num">3</span>
+                <span>Paste your <strong>Client ID</strong> & <strong>Client Secret</strong> below:</span>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 12px;">
+              <input type="text" id="input-custom-client-id" placeholder="Client ID (32 characters)" autocomplete="off" />
+              <input type="password" id="input-custom-client-secret" placeholder="Client Secret (32 characters)" autocomplete="off" />
+              <button type="button" id="btn-custom-client-login" class="btn btn-spotify btn-block">
+                <span>Connect with My Custom App</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

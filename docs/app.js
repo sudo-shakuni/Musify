@@ -99,6 +99,9 @@ const elements = {
   linkOpenSpotifyWeb: document.getElementById("link-open-spotify-web"),
   btnCopySnippet: document.getElementById("btn-copy-snippet"),
   codeTokenSnippet: document.getElementById("code-token-snippet"),
+  btnCustomClientLogin: document.getElementById("btn-custom-client-login"),
+  inputCustomClientId: document.getElementById("input-custom-client-id"),
+  inputCustomClientSecret: document.getElementById("input-custom-client-secret"),
 
   fetchForm: document.getElementById("fetch-form"),
   playlistUrlInput: document.getElementById("playlist-url"),
@@ -547,6 +550,17 @@ function setupEventListeners() {
   }
   if (elements.codeTokenSnippet) {
     elements.codeTokenSnippet.addEventListener("click", copyTokenSnippet);
+  }
+  if (elements.btnCustomClientLogin) {
+    elements.btnCustomClientLogin.addEventListener("click", () => {
+      const cid = elements.inputCustomClientId ? elements.inputCustomClientId.value.trim() : "";
+      const csec = elements.inputCustomClientSecret ? elements.inputCustomClientSecret.value.trim() : "";
+      if (!cid || cid.length < 15) {
+        showToast("Please enter a valid Spotify Client ID", "warning");
+        return;
+      }
+      startGoogleOrBrowserAuth({ client_id: cid, client_secret: csec });
+    });
   }
   if (elements.linkOpenSpotifyWeb) {
     elements.linkOpenSpotifyWeb.addEventListener("click", (e) => {
@@ -1856,17 +1870,21 @@ function closeSpotifyAuthModal() {
 
 let authPollInterval = null;
 
-async function startGoogleOrBrowserAuth() {
+async function startGoogleOrBrowserAuth(opts = {}) {
   try {
     if (elements.authWaitingBanner) {
       elements.authWaitingBanner.classList.remove("hidden");
     }
-    showToast("🌐 Launching Spotify in default browser for Google sign in...", "info", 4000);
+    showToast("🌐 Launching Spotify authorization in browser...", "info", 4000);
+
+    const payload = {};
+    if (opts && opts.client_id) payload.client_id = opts.client_id;
+    if (opts && opts.client_secret) payload.client_secret = opts.client_secret;
 
     const res = await fetch("/api/spotify/auth/launch_browser", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({})
+      body: JSON.stringify(payload)
     });
     const data = await res.json();
 
