@@ -162,15 +162,16 @@ def get_system_info():
 
 @app.post("/api/playlist/info")
 def get_playlist_info(req: PlaylistRequest):
-    """Fetches full playlist metadata and track list from Spotify URL."""
-    print(f"\n[Spotify Cloner] Loading URL: {req.url}")
+    """Fetches full playlist / track metadata across Spotify, YouTube, JioSaavn, and Amazon Music."""
+    print(f"\n[My-Music] Loading URL: {req.url}")
     try:
         data = fetch_metadata(req.url, req.client_id, req.client_secret)
-        print(f"[Spotify Cloner] SUCCESS: Retrieved {len(data.get('tracks', []))} tracks for '{data.get('title')}'")
+        print(f"[My-Music] SUCCESS: Retrieved {len(data.get('tracks', []))} tracks for '{data.get('title')}'")
         return data
     except Exception as e:
-        print(f"[Spotify Cloner] ERROR: {e}")
+        print(f"[My-Music] ERROR: {e}")
         raise HTTPException(status_code=400, detail=str(e))
+
 
 
 @app.post("/api/download/start")

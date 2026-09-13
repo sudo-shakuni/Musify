@@ -5,6 +5,7 @@ Supports Spotify, YouTube, YouTube Music, JioSaavn, and Amazon Music.
 
 import json
 import re
+import threading
 import time
 import urllib.parse
 from typing import Any, Dict, List, Optional, Tuple
@@ -126,6 +127,7 @@ def resolve_youtube_metadata(url: str) -> Dict[str, Any]:
             "source": "youtube",
         })
 
+    total_dur = sum(t.get("duration_ms", 0) for t in tracks)
     return {
         "id": info.get("id") or "yt",
         "type": entity_type,
@@ -136,10 +138,13 @@ def resolve_youtube_metadata(url: str) -> Dict[str, Any]:
         "cover_url": cover_url,
         "year": str(info.get("release_year") or ""),
         "total_tracks": len(tracks),
+        "total_duration_ms": total_dur,
+        "total_duration_formatted": format_duration(total_dur),
         "tracks": tracks,
         "source": "youtube",
         "platform_badge": "YouTube Music" if "music.youtube" in url else "YouTube",
     }
+
 
 
 def resolve_jiosaavn_metadata(url: str) -> Dict[str, Any]:
@@ -198,6 +203,7 @@ def resolve_jiosaavn_metadata(url: str) -> Dict[str, Any]:
                             "source": "jiosaavn",
                         })
 
+                    total_dur = sum(t.get("duration_ms", 0) for t in tracks)
                     return {
                         "id": data.get("id") or token,
                         "type": entity_type,
@@ -208,10 +214,13 @@ def resolve_jiosaavn_metadata(url: str) -> Dict[str, Any]:
                         "cover_url": cover,
                         "year": str(data.get("year") or ""),
                         "total_tracks": len(tracks),
+                        "total_duration_ms": total_dur,
+                        "total_duration_formatted": format_duration(total_dur),
                         "tracks": tracks,
                         "source": "jiosaavn",
                         "platform_badge": "JioSaavn",
                     }
+
         except Exception as api_err:
             print(f"[JioSaavn API Warning] {api_err}, falling back to HTML parsing...")
 
@@ -287,6 +296,7 @@ def resolve_jiosaavn_metadata(url: str) -> Dict[str, Any]:
             "source": "jiosaavn",
         })
 
+    total_dur = sum(t.get("duration_ms", 0) for t in tracks)
     return {
         "id": "saavn",
         "type": entity_type,
@@ -297,10 +307,13 @@ def resolve_jiosaavn_metadata(url: str) -> Dict[str, Any]:
         "cover_url": cover_url,
         "year": "",
         "total_tracks": len(tracks),
+        "total_duration_ms": total_dur,
+        "total_duration_formatted": format_duration(total_dur),
         "tracks": tracks,
         "source": "jiosaavn",
         "platform_badge": "JioSaavn",
     }
+
 
 
 def resolve_amazon_metadata(url: str) -> Dict[str, Any]:
@@ -373,6 +386,7 @@ def resolve_amazon_metadata(url: str) -> Dict[str, Any]:
             "source": "amazon",
         })
 
+    total_dur = sum(t.get("duration_ms", 0) for t in tracks)
     return {
         "id": "amazon",
         "type": "playlist" if ("/playlists/" in url or "/albums/" in url) else "track",
@@ -383,10 +397,38 @@ def resolve_amazon_metadata(url: str) -> Dict[str, Any]:
         "cover_url": cover_url,
         "year": "",
         "total_tracks": len(tracks),
+        "total_duration_ms": total_dur,
+        "total_duration_formatted": format_duration(total_dur),
         "tracks": tracks,
         "source": "amazon",
         "platform_badge": "Amazon Music",
     }
+
+
+
+# In-memory LRU cache with TTL (10 minutes) for ultra-fast instant repeated lookups (<1ms)
+_UNIVERSAL_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+_UNIVERSAL_CACHE_LOCK = threading.Lock()
+_CACHE_TTL_SECONDS = 600
+
+
+def get_cached_metadata(cache_key: str) -> Optional[Dict[str, Any]]:
+    with _UNIVERSAL_CACHE_LOCK:
+        if cache_key in _UNIVERSAL_CACHE:
+            ts, data = _UNIVERSAL_CACHE[cache_key]
+            if time.time() - ts < _CACHE_TTL_SECONDS:
+                return data
+            else:
+                del _UNIVERSAL_CACHE[cache_key]
+    return None
+
+
+def set_cached_metadata(cache_key: str, data: Dict[str, Any]) -> None:
+    with _UNIVERSAL_CACHE_LOCK:
+        if len(_UNIVERSAL_CACHE) >= 100:
+            oldest_key = min(_UNIVERSAL_CACHE, key=lambda k: _UNIVERSAL_CACHE[k][0])
+            del _UNIVERSAL_CACHE[oldest_key]
+        _UNIVERSAL_CACHE[cache_key] = (time.time(), data)
 
 
 def resolve_universal_metadata(
@@ -396,30 +438,46 @@ def resolve_universal_metadata(
 ) -> Dict[str, Any]:
     """
     Unified entrypoint: Automatically detects the music platform
-    and extracts complete metadata and tracklists.
+    and extracts complete metadata and tracklists with thread-safe LRU caching.
     """
     clean_url = url.strip()
+    cache_key = f"{clean_url}|{client_id or ''}"
+    cached = get_cached_metadata(cache_key)
+    if cached:
+        return cached
+
     platform = detect_platform(clean_url)
 
     if platform == "spotify":
         data = fetch_spotify_metadata(clean_url, client_id, client_secret)
         data["source"] = "spotify"
         data["platform_badge"] = "Spotify"
+        set_cached_metadata(cache_key, data)
         return data
 
     if platform in ("youtube", "youtube_music"):
-        return resolve_youtube_metadata(clean_url)
+        data = resolve_youtube_metadata(clean_url)
+        set_cached_metadata(cache_key, data)
+        return data
 
     if platform == "jiosaavn":
-        return resolve_jiosaavn_metadata(clean_url)
+        data = resolve_jiosaavn_metadata(clean_url)
+        set_cached_metadata(cache_key, data)
+        return data
 
     if platform == "amazon":
-        return resolve_amazon_metadata(clean_url)
+        data = resolve_amazon_metadata(clean_url)
+        set_cached_metadata(cache_key, data)
+        return data
 
     try:
         data = fetch_spotify_metadata(clean_url, client_id, client_secret)
         data["source"] = "spotify"
         data["platform_badge"] = "Spotify"
+        set_cached_metadata(cache_key, data)
         return data
     except Exception:
-        return resolve_youtube_metadata(clean_url)
+        data = resolve_youtube_metadata(clean_url)
+        set_cached_metadata(cache_key, data)
+        return data
+

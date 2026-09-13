@@ -82,13 +82,17 @@ def parse_spotify_url(url_or_uri: str) -> Optional[Tuple[str, str]]:
 
 
 def format_duration(duration_ms: Optional[int]) -> str:
-    """Formats milliseconds into M:SS."""
+    """Formats milliseconds into M:SS or H:MM:SS."""
     if not duration_ms or duration_ms <= 0:
         return "--:--"
     seconds = int(duration_ms // 1000)
-    minutes = seconds // 60
+    hours = seconds // 3600
+    minutes = (seconds % 3600) // 60
     rem_seconds = seconds % 60
+    if hours > 0:
+        return f"{hours}:{minutes:02d}:{rem_seconds:02d}"
     return f"{minutes}:{rem_seconds:02d}"
+
 
 
 def get_best_image_url(entity: Dict[str, Any]) -> str:

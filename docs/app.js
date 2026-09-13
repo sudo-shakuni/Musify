@@ -1002,7 +1002,7 @@ function renderPlaylistView(data) {
   elements.plDesc.textContent = data.description || (data.author ? `Curated by ${data.author}` : "");
   elements.plAuthor.textContent = data.author || "Curator";
   elements.plCount.textContent = data.total_tracks;
-  elements.plDuration.textContent = data.total_duration_formatted;
+  elements.plDuration.textContent = data.total_duration_formatted || "";
 
   // Reset filter input
   if (elements.trackFilterInput) {
