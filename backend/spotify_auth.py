@@ -19,33 +19,10 @@ import webbrowser
 from typing import Any, Dict, List, Optional, Tuple
 import requests
 
-# Re-use our resilient SNI-bypass urllib3 setup
+
+# Standard urllib3 warning suppression
 try:
-    import urllib3.connection
-    import urllib3.util.ssl_
-
-    _orig_match = urllib3.connection._match_hostname
-
-    def _patched_match(cert, asserted_hostname, *args, **kwargs):
-        if asserted_hostname and "spotify" in asserted_hostname:
-            return
-        return _orig_match(cert, asserted_hostname, *args, **kwargs)
-
-    urllib3.connection._match_hostname = _patched_match
-
-    _orig_wrap = urllib3.util.ssl_.ssl_wrap_socket
-
-    def _patched_ssl_wrap(sock, *args, **kwargs):
-        server_hostname = kwargs.get("server_hostname")
-        context = args[0] if len(args) > 0 else kwargs.get("ssl_context")
-        if server_hostname and "spotify" in server_hostname:
-            kwargs["server_hostname"] = None
-            if context:
-                context.check_hostname = False
-        return _orig_wrap(sock, *args, **kwargs)
-
-    urllib3.util.ssl_.ssl_wrap_socket = _patched_ssl_wrap
-    urllib3.connection.ssl_wrap_socket = _patched_ssl_wrap
+    import urllib3
     urllib3.disable_warnings()
 except Exception:
     pass
