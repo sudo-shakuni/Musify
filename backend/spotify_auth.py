@@ -483,6 +483,17 @@ class SpotifyAuthManager:
         url = f"https://api.spotify.com/v1/me/playlists?limit={limit}&offset={offset}"
         headers = {"Authorization": f"Bearer {token}"}
         resp = requests.get(url, headers=headers, verify=False, timeout=20)
+        if resp.status_code == 429:
+            print("[Auth] Spotify API Rate Limit (429 QUOTA_EXCEEDED) reached for shared Client ID.")
+            return {
+                "total": 0,
+                "limit": limit,
+                "offset": offset,
+                "items": [],
+                "playlists": [],
+                "quota_exceeded": True,
+                "message": "Spotify's public app reached its daily API quota limit. You can paste any playlist URL directly into the search bar at the top to view and download it immediately!"
+            }
         if resp.status_code != 200:
             raise ValueError(f"Could not fetch playlists: {resp.text}")
 
@@ -515,6 +526,7 @@ class SpotifyAuthManager:
             "offset": offset,
             "items": items,
             "playlists": items,
+            "quota_exceeded": False,
         }
 
     def get_liked_songs_metadata(self, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
@@ -529,6 +541,17 @@ class SpotifyAuthManager:
         url = f"https://api.spotify.com/v1/me/tracks?limit={limit}&offset={offset}"
         headers = {"Authorization": f"Bearer {token}"}
         resp = requests.get(url, headers=headers, verify=False, timeout=20)
+        if resp.status_code == 429:
+            return {
+                "id": "liked_songs",
+                "type": "playlist",
+                "title": "Liked Songs",
+                "author": "You",
+                "total_tracks": 0,
+                "tracks": [],
+                "quota_exceeded": True,
+                "message": "Spotify's public app reached its daily API quota limit. Please try again later or paste specific playlist/track links into the search bar!"
+            }
         if resp.status_code != 200:
             raise ValueError(f"Could not fetch Liked Songs: {resp.text}")
 

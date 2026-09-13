@@ -2164,8 +2164,25 @@ async function loadUserPlaylists(forceRefresh = false) {
   `;
   try {
     const res = await fetch(`/api/spotify/me/playlists?limit=50${forceRefresh ? '&refresh=1' : ''}`);
-    if (!res.ok) throw new Error("Could not load playlists");
     const data = await res.json();
+    if (data.quota_exceeded) {
+      elements.libraryPlaylistsGrid.innerHTML = `
+        <div class="library-error" style="background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.25); padding: 28px; border-radius: 14px; text-align: center; max-width: 580px; margin: 20px auto;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">⚡</div>
+          <h3 style="color: #ffb830; margin: 0 0 8px; font-size: 1.15rem;">Spotify Shared Rate Limit Reached</h3>
+          <p style="color: #b3b3b3; margin: 0 0 18px; font-size: 0.88rem; line-height: 1.5;">
+            Spotify's shared public app reached its daily quota limit for automatic playlist listing.<br>
+            <strong>You can still download any playlist right now:</strong> Simply copy the link to any playlist from Spotify and paste it into the search box at the top!
+          </p>
+          <button class="btn btn-primary" style="padding: 8px 20px;" onclick="switchNavTab('search'); if(elements.playlistUrlInput) elements.playlistUrlInput.focus();">
+            <i data-lucide="search"></i> Paste Playlist URL to Download
+          </button>
+        </div>
+      `;
+      if (window.lucide) window.lucide.createIcons();
+      return;
+    }
+    if (!res.ok) throw new Error(data.detail || "Could not load playlists");
     state.auth.playlists = data.playlists || data.items || [];
     if (elements.libraryPlaylistsCount) {
       elements.libraryPlaylistsCount.textContent = state.auth.playlists.length;
