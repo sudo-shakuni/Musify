@@ -1,17 +1,17 @@
-# Musify 1-Click Windows Installer
-# Usage: irm https://raw.githubusercontent.com/sudo-shakuni/Musify/main/install.ps1 | iex
+# Marko-Time 1-Click Windows Installer
+# Usage: irm https://raw.githubusercontent.com/sudo-shakuni/marko-time/main/install.ps1 | iex
 
 $ErrorActionPreference = "Stop"
 Write-Host "==================================================" -ForegroundColor Green
-Write-Host "🎵 Installing Musify v1.0.0 for Windows..." -ForegroundColor Green
+Write-Host "🎵 Installing Marko-Time v1.0.0 for Windows..." -ForegroundColor Green
 Write-Host "==================================================" -ForegroundColor Green
 
-$InstallDir = "$env:LOCALAPPDATA\Musify"
-$ZipUrl = "https://github.com/sudo-shakuni/Musify/archive/refs/heads/main.zip"
-$TempZip = "$env:TEMP\Musify-main.zip"
-$TempExtract = "$env:TEMP\Musify-Extract"
+$InstallDir = "$env:LOCALAPPDATA\Marko-Time"
+$ZipUrl = "https://github.com/sudo-shakuni/marko-time/archive/refs/heads/main.zip"
+$TempZip = "$env:TEMP\marko-time-main.zip"
+$TempExtract = "$env:TEMP\Marko-Time-Extract"
 
-Write-Host "📥 Downloading latest Musify package from GitHub..." -ForegroundColor Cyan
+Write-Host "📥 Downloading latest Marko-Time package from GitHub..." -ForegroundColor Cyan
 Invoke-WebRequest -Uri $ZipUrl -OutFile $TempZip -UseBasicParsing
 
 if (Test-Path $TempExtract) {
@@ -26,7 +26,7 @@ if (-not (Test-Path $InstallDir)) {
 }
 
 Write-Host "📦 Extracting files to $InstallDir..." -ForegroundColor Cyan
-Copy-Item -Path "$TempExtract\Musify-main\*" -Destination $InstallDir -Recurse -Force
+Copy-Item -Path "$TempExtract\marko-time-main\*" -Destination $InstallDir -Recurse -Force
 Remove-Item -Path $TempExtract -Recurse -Force -ErrorAction SilentlyContinue
 Remove-Item -Path $TempZip -Force -ErrorAction SilentlyContinue
 
@@ -59,16 +59,16 @@ Write-Host "🎬 Verifying FFmpeg binaries..." -ForegroundColor Cyan
 # Create Desktop Shortcut
 $WshShell = New-Object -ComObject WScript.Shell
 $DesktopPath = [Environment]::GetFolderPath("Desktop")
-$Shortcut = $WshShell.CreateShortcut("$DesktopPath\Musify.lnk")
-$Shortcut.TargetPath = "$InstallDir\Musify.bat"
+$Shortcut = $WshShell.CreateShortcut("$DesktopPath\marko-time.lnk")
+$Shortcut.TargetPath = "$InstallDir\marko-time.bat"
 $Shortcut.WorkingDirectory = $InstallDir
-$Shortcut.Description = "Musify — Studio-Grade Music & Playlist Downloader"
+$Shortcut.Description = "Marko-Time — Studio-Grade Music & Playlist Downloader"
 if (Test-Path "$InstallDir\frontend\logo.jpg") {
     $Shortcut.IconLocation = "$InstallDir\frontend\logo.jpg,0"
 }
 $Shortcut.Save()
 
 Write-Host "✨ Installation Complete! Desktop shortcut created." -ForegroundColor Green
-Write-Host "🚀 Launching Musify..." -ForegroundColor Green
+Write-Host "🚀 Launching Marko-Time..." -ForegroundColor Green
 
-Start-Process -FilePath "$InstallDir\Musify.bat" -WorkingDirectory $InstallDir
+Start-Process -FilePath "$InstallDir\marko-time.bat" -WorkingDirectory $InstallDir

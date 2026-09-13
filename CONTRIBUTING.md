@@ -1,6 +1,6 @@
-# Contributing to Musify 🎵
+# Contributing to Marko-Time 🎵
 
-Thank you for your interest in contributing to **Musify**! We welcome contributions from developers, designers, and music enthusiasts worldwide.
+Thank you for your interest in contributing to **Marko-Time**! We welcome contributions from developers, designers, and music enthusiasts worldwide.
 
 ---
 

@@ -46,7 +46,7 @@ def get_auth_storage_path() -> str:
     """Returns local path to store user auth tokens."""
     local_app_data = os.environ.get("LOCALAPPDATA")
     if local_app_data:
-        target_dir = os.path.join(local_app_data, "Musify")
+        target_dir = os.path.join(local_app_data, "Marko-Time")
     else:
         target_dir = os.path.expanduser("~")
     os.makedirs(target_dir, exist_ok=True)
@@ -104,7 +104,7 @@ class OAuthCallbackListener:
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Musify — Spotify Connection Error</title>
+    <title>Marko-Time — Spotify Connection Error</title>
     <style>
         body {{ background: #121212; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
         .card {{ background: #181818; padding: 40px; border-radius: 16px; text-align: center; border: 1px solid #333; max-width: 440px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
@@ -116,7 +116,7 @@ class OAuthCallbackListener:
     <div class="card">
         <h2>Authentication Cancelled</h2>
         <p>{error}</p>
-        <p style="color: #777; font-size: 13px;">You may close this window and return to Musify.</p>
+        <p style="color: #777; font-size: 13px;">You may close this window and return to Marko-Time.</p>
     </div>
 </body>
 </html>"""
@@ -129,7 +129,7 @@ class OAuthCallbackListener:
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Connected to Musify!</title>
+    <title>Connected to Marko-Time!</title>
     <style>
         body {{ background: #121212; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
         .card {{ background: #181818; padding: 45px; border-radius: 20px; text-align: center; border: 1px solid #282828; max-width: 460px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }}
@@ -147,7 +147,7 @@ class OAuthCallbackListener:
         </div>
         <div class="badge">CONNECTED TO MUSIFY</div>
         <h2>Welcome, <span class="user-highlight">{user_name}</span>!</h2>
-        <p>Your Spotify account has been linked successfully.<br>You can safely close this tab and return to the Musify app.</p>
+        <p>Your Spotify account has been linked successfully.<br>You can safely close this tab and return to the Marko-Time app.</p>
     </div>
     <script>
         setTimeout(function() {{ window.close(); }}, 3500);
@@ -532,7 +532,7 @@ class SpotifyAuthManager:
     def get_liked_songs_metadata(self, limit: int = 50, offset: int = 0) -> Dict[str, Any]:
         """
         Fetches user's saved tracks (Liked Songs) and formats them
-        as a standard Musify playlist object for instant preview & 1-click download.
+        as a standard Marko-Time playlist object for instant preview & 1-click download.
         """
         token = self.get_valid_token()
         if not token:

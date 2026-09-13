@@ -1,7 +1,7 @@
 """
 Spotify Cookie Grabber & Auto Token Extractor.
 Automatically reads the sp_dc cookie from Chrome/Edge browser databases,
-uses it to obtain a valid Spotify access token, and connects to Musify.
+uses it to obtain a valid Spotify access token, and connects to Marko-Time.
 
 This provides true 1-click hassle-free Spotify authentication.
 """

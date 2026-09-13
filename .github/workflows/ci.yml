@@ -1,4 +1,4 @@
-name: Musify CI & Quality Checks
+name: Marko-Time CI & Quality Checks
 
 on:
   push:

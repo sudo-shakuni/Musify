@@ -1,9 +1,9 @@
 @echo off
-title Musify
+title Marko-Time
 cd /d "%~dp0"
 
 echo ========================================================
-echo   Musify — Studio-Grade Music Downloader
+echo   Marko-Time — Studio-Grade Music Downloader
 echo ========================================================
 echo.
 
@@ -57,7 +57,7 @@ echo [3/3] Verifying FFmpeg audio engine...
 
 echo.
 echo ========================================================
-echo   Launching Musify — Studio-Grade Music Downloader
+echo   Launching Marko-Time — Studio-Grade Music Downloader
 echo ========================================================
 echo.
 

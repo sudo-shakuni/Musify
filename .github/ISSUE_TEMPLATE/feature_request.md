@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for Musify
+about: Suggest an idea for Marko-Time
 title: '[FEATURE] '
 labels: enhancement
 assignees: ''

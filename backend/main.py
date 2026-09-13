@@ -49,7 +49,7 @@ def get_local_lan_ip() -> str:
             return "127.0.0.1"
 
 
-app = FastAPI(title="Musify API")
+app = FastAPI(title="Marko-Time API")
 
 app.add_middleware(
     CORSMiddleware,
@@ -148,7 +148,7 @@ class SelectFolderRequest(BaseModel):
 def get_system_info():
     """Returns system status, default music directory, and FFmpeg verification."""
     ffmpeg_bin, _ = ensure_ffmpeg()
-    user_music = os.path.join(os.path.expanduser("~"), "Music", "Musify Downloads")
+    user_music = os.path.join(os.path.expanduser("~"), "Music", "Marko-Time Downloads")
     os.makedirs(user_music, exist_ok=True)
 
     return {
@@ -389,7 +389,7 @@ def spotify_oauth_callback(code: Optional[str] = None, state: Optional[str] = No
     <div class="card">
         <div class="success-badge">CONNECTED</div>
         <h2>Welcome, {user_name}!</h2>
-        <p>Your Spotify account has been successfully linked to Musify.</p>
+        <p>Your Spotify account has been successfully linked to Marko-Time.</p>
         <p style="font-size: 13px; color: #777;">This window will close automatically...</p>
         <script>
             if (window.opener) {{
@@ -402,7 +402,7 @@ def spotify_oauth_callback(code: Optional[str] = None, state: Optional[str] = No
 </html>"""
         return HTMLResponse(html)
     except Exception as e:
-        return HTMLResponse(f"<h3 style='color:#ff5555;'>Authentication Failed: {e}</h3><p style='color:#888;'>Please return to Musify and try again.</p>")
+        return HTMLResponse(f"<h3 style='color:#ff5555;'>Authentication Failed: {e}</h3><p style='color:#888;'>Please return to Marko-Time and try again.</p>")
 
 
 @app.post("/api/spotify/auth/auto_grab")
@@ -593,7 +593,7 @@ def get_network_info():
 @app.get("/api/mobile/library")
 def get_mobile_library():
     """Scans local music download folder and returns playlists & tracks for mobile browser."""
-    user_music = os.path.join(os.path.expanduser("~"), "Music", "Musify Downloads")
+    user_music = os.path.join(os.path.expanduser("~"), "Music", "Marko-Time Downloads")
     os.makedirs(user_music, exist_ok=True)
 
     playlists = []
@@ -639,8 +639,8 @@ def download_playlist_as_zip(path: str, background_tasks: BackgroundTasks):
     if not os.path.exists(abs_path) or not os.path.isdir(abs_path):
         raise HTTPException(status_code=404, detail="Playlist folder not found.")
 
-    folder_name = os.path.basename(abs_path) or "Musify_Playlist"
-    tmp_fd, tmp_zip_path = tempfile.mkstemp(suffix=".zip", prefix="musify_zip_")
+    folder_name = os.path.basename(abs_path) or "Marko-Time_Playlist"
+    tmp_fd, tmp_zip_path = tempfile.mkstemp(suffix=".zip", prefix="marko-time_zip_")
     os.close(tmp_fd)
 
     try:
@@ -687,7 +687,7 @@ if __name__ == "__main__":
     ensure_ffmpeg()
     port = 8800
     print(f"\n=======================================================")
-    print(f" 🎵 Musify — Studio-Grade Music Downloader")
+    print(f" 🎵 Marko-Time — Studio-Grade Music Downloader")
     print(f" Running at: http://localhost:{port}")
     print(f"=======================================================\n")
     # Open browser automatically

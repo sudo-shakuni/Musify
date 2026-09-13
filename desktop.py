@@ -76,7 +76,7 @@ def main():
     app_url = f"http://127.0.0.1:{PORT}"
     try:
         webview.create_window(
-            title="Musify — Studio-Grade Music Downloader",
+            title="Marko-Time — Studio-Grade Music Downloader",
             url=app_url,
             width=1240,
             height=850,
@@ -85,7 +85,7 @@ def main():
         )
         webview.start()
     except Exception as e:
-        print(f"[Musify Notice] Opening in web browser: {e}")
+        print(f"[Marko-Time Notice] Opening in web browser: {e}")
         print(f"Running at: {app_url}")
         print("Press Ctrl+C to close and exit.")
         webbrowser.open(app_url)
@@ -93,7 +93,7 @@ def main():
             while True:
                 time.sleep(1)
         except KeyboardInterrupt:
-            print("\nShutting down Musify...")
+            print("\nShutting down Marko-Time...")
 
     if server:
         server.stop()
