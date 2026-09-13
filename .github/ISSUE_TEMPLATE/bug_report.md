@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve Marko-Time
+about: Create a report to help us improve My-Music
 title: '[BUG] '
 labels: bug
 assignees: ''
@@ -15,7 +15,7 @@ Link to the playlist, album, or track where the issue occurred:
 **Desktop Environment:**
 - OS: [e.g. Windows 11, macOS, Ubuntu]
 - Audio Format Selected: [e.g. MP3 320k, FLAC]
-- App Mode: [e.g. Desktop Window (marko-time.bat), Web Browser]
+- App Mode: [e.g. Desktop Window (my-music.bat), Web Browser]
 
 **Expected behavior**
 A clear and concise description of what you expected to happen.

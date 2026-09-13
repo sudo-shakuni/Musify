@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="assets/logo.jpg" alt="Marko-Time Logo" width="120" style="border-radius: 24px; box-shadow: 0 8px 32px rgba(29, 185, 84, 0.4);" />
+<img src="assets/logo.jpg" alt="My-Music Logo" width="120" style="border-radius: 24px; box-shadow: 0 8px 32px rgba(29, 185, 84, 0.4);" />
 
-# 🎵 Marko-Time
+# 🎵 My-Music
 ### Studio-Grade Music & Playlist Downloader with Pro ID3 Tagging
 
-[![CI](https://github.com/sudo-shakuni/marko-time/actions/workflows/ci.yml/badge.svg)](https://github.com/sudo-shakuni/marko-time/actions) [![Release](https://img.shields.io/github/v/release/sudo-shakuni/marko-time?style=for-the-badge&color=1db954&logo=github)](https://github.com/sudo-shakuni/marko-time/releases/latest)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-1db954?style=for-the-badge&logo=google-chrome&logoColor=white)](https://sudo-shakuni.github.io/marko-time/) 
+[![CI](https://github.com/sudo-shakuni/my-music/actions/workflows/ci.yml/badge.svg)](https://github.com/sudo-shakuni/my-music/actions) [![Release](https://img.shields.io/github/v/release/sudo-shakuni/my-music?style=for-the-badge&color=1db954&logo=github)](https://github.com/sudo-shakuni/my-music/releases/latest)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-1db954?style=for-the-badge&logo=google-chrome&logoColor=white)](https://sudo-shakuni.github.io/my-music/) 
 [![License: MIT](https://img.shields.io/badge/License-MIT-1db954.svg?style=for-the-badge)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.103+-009688.svg?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
@@ -15,17 +15,17 @@
 
 <br />
 
-<img src="assets/hero_banner.jpg" alt="Marko-Time Desktop App Hero Banner" width="100%" style="border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,0.8);" />
+<img src="assets/hero_banner.jpg" alt="My-Music Desktop App Hero Banner" width="100%" style="border-radius: 12px; box-shadow: 0 12px 48px rgba(0,0,0,0.8);" />
 
 <p align="center">
   <br />
-  <a href="https://github.com/sudo-shakuni/marko-time/releases/latest/download/marko-time-v1.0.0-Windows.zip">
+  <a href="https://github.com/sudo-shakuni/my-music/releases/latest/download/my-music-v1.0.0-Windows.zip">
     <img src="https://img.shields.io/badge/⬇️_DOWNLOAD_WINDOWS_PORTABLE-v1.0.0_(ZIP)-1db954?style=for-the-badge&logo=windows&logoColor=white" height="42" alt="Download Windows Release" />
   </a>
 </p>
 
 <p align="center">
-  <b>Marko-Time</b> is an ultra-fast, zero-cost desktop & web application designed to clone and download Spotify playlists, albums, and tracks in studio-grade audio quality (up to 320 kbps MP3 & lossless FLAC) with authentic metadata, high-resolution cover art, and sequence-accurate <code>.m3u8</code> playlist cloning.
+  <b>My-Music</b> is an ultra-fast, zero-cost desktop & web application designed to clone and download Spotify playlists, albums, and tracks in studio-grade audio quality (up to 320 kbps MP3 & lossless FLAC) with authentic metadata, high-resolution cover art, and sequence-accurate <code>.m3u8</code> playlist cloning.
 </p>
 
 [✨ Features](#-key-features) • [🚀 Quick Start](#-quick-start) • [🎧 In-App HQ Audio](#-in-app-hq-player) • [📂 Project Architecture](#-project-architecture) • [⌨️ Shortcuts](#-keyboard-shortcuts)
@@ -58,7 +58,7 @@
   - Full **Shift-Click range selection** and filter-scoped selection.
 - **🔗 Spotify Account Integration & 1-Click Library Downloads**:
   - Connect your personal Spotify account via 1-click OAuth (PKCE) or access token.
-  - Browse your entire Spotify library inside Marko-Time: personal playlists, collaborative collections, and **Liked Songs**.
+  - Browse your entire Spotify library inside My-Music: personal playlists, collaborative collections, and **Liked Songs**.
   - 1-click download any personal playlist or your entire Liked Songs collection directly without needing to copy-paste URLs.
 - **📋 Automatic Clipboard Detection**:
   - Auto-detects copied Spotify links upon focusing the window for 1-click loading.
@@ -79,10 +79,10 @@
 
 ### ⚡ Quick 1-Click Install (Windows PowerShell)
 
-Run this single command in PowerShell to automatically download, unpack, and launch Marko-Time with a Desktop shortcut:
+Run this single command in PowerShell to automatically download, unpack, and launch My-Music with a Desktop shortcut:
 
 ```powershell
-irm https://raw.githubusercontent.com/sudo-shakuni/marko-time/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/sudo-shakuni/my-music/main/install.ps1 | iex
 ```
 
 ---
@@ -90,8 +90,8 @@ irm https://raw.githubusercontent.com/sudo-shakuni/marko-time/main/install.ps1 |
 
 ### Windows Desktop (One-Click)
 Simply run either launcher from the project folder:
-- **`marko-time.bat`** (or `run.bat`) — Initializes the Python environment, installs dependencies, verifies the FFmpeg engine, and launches the native desktop window.
-- **`marko-time.vbs`** — Launches the application silently without opening a terminal background window.
+- **`my-music.bat`** (or `run.bat`) — Initializes the Python environment, installs dependencies, verifies the FFmpeg engine, and launches the native desktop window.
+- **`my-music.vbs`** — Launches the application silently without opening a terminal background window.
 
 ```powershell
 # Or launch directly from terminal
@@ -104,8 +104,8 @@ python desktop.py
 
 1. **Clone the repository**:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/Marko-Time.git
-   cd Marko-Time
+   git clone https://github.com/YOUR_USERNAME/My-Music.git
+   cd My-Music
    ```
 
 2. **Create and activate a virtual environment**:
@@ -129,7 +129,7 @@ python desktop.py
    python setup_ffmpeg.py
    ```
 
-5. **Start Marko-Time**:
+5. **Start My-Music**:
    ```bash
    # Desktop Window (Windows / macOS)
    python desktop.py
@@ -143,14 +143,14 @@ python desktop.py
 
 ### 🐳 Docker Deployment
 
-Run Marko-Time anywhere with Docker:
+Run My-Music anywhere with Docker:
 
 ```bash
-docker build -t marko-time .
-docker run -d -p 8800:8800 -v marko-time_music:/root/Music/Marko-Time\ Downloads marko-time
+docker build -t my-music .
+docker run -d -p 8800:8800 -v my-music_music:/root/Music/My-Music\ Downloads my-music
 ```
 
-Access Marko-Time at `http://localhost:8800`.
+Access My-Music at `http://localhost:8800`.
 
 ---
 
@@ -166,9 +166,9 @@ Access Marko-Time at `http://localhost:8800`.
 
 ---
 
-## 📊 Feature Comparison: Why Marko-Time?
+## 📊 Feature Comparison: Why My-Music?
 
-| Feature | 🎵 Marko-Time | SpotDL CLI | Online Web Converters | Audacity Recorder |
+| Feature | 🎵 My-Music | SpotDL CLI | Online Web Converters | Audacity Recorder |
 |---|:---:|:---:|:---:|:---:|
 | **Zero Paid API Keys** | ✅ Public Embeds | ⚠️ Requires Spotify Dev App | ✅ Free / Ad-heavy | N/A |
 | **Authentic ID3 Tags** | ✅ Full Mutagen | ✅ Mutagen | ❌ Often missing/scrambled | ❌ Manual typing |
@@ -185,7 +185,7 @@ Access Marko-Time at `http://localhost:8800`.
 ## 📂 Project Architecture
 
 ```text
-Marko-Time/
+My-Music/
 ├── assets/                 # GitHub branding, hero banner & application logos
 │   ├── hero_banner.jpg
 │   └── logo.jpg
@@ -201,8 +201,8 @@ Marko-Time/
 ├── desktop.py              # Native desktop window controller (pywebview + uvicorn)
 ├── setup_ffmpeg.py         # Automated static FFmpeg audio engine resolver
 ├── test_suite.py           # Integration & metadata validation suite
-├── marko-time.bat              # One-click desktop Windows batch launcher
-├── marko-time.vbs              # Silent background desktop launcher
+├── my-music.bat              # One-click desktop Windows batch launcher
+├── my-music.vbs              # Silent background desktop launcher
 ├── run.bat                 # Automated installation and launch script
 ├── requirements.txt        # Python dependency manifest
 ├── Dockerfile              # Containerized deployment specification
@@ -214,7 +214,7 @@ Marko-Time/
 
 ## 🛡️ Privacy & Security First
 
-Marko-Time is built with privacy and security at its core:
+My-Music is built with privacy and security at its core:
 - **No telemetry, trackers, or cookies.**
 - **No external account creation or login credentials.**
 - **Strict path traversal safeguards** on local audio streaming endpoints.
@@ -224,11 +224,11 @@ Marko-Time is built with privacy and security at its core:
 
 ## ⭐ Star History
 
-If you love Marko-Time, please consider giving it a star! It helps the project reach more music enthusiasts.
+If you love My-Music, please consider giving it a star! It helps the project reach more music enthusiasts.
 
 <div align="center">
-  <a href="https://star-history.com/#sudo-shakuni/marko-time&Date">
-    <img src="https://api.star-history.com/svg?repos=sudo-shakuni/marko-time&type=Date&theme=dark" alt="Star History Chart" width="750" />
+  <a href="https://star-history.com/#sudo-shakuni/my-music&Date">
+    <img src="https://api.star-history.com/svg?repos=sudo-shakuni/my-music&type=Date&theme=dark" alt="Star History Chart" width="750" />
   </a>
 </div>
 

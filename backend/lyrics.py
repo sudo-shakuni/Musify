@@ -1,5 +1,5 @@
 """
-Synchronized Lyrics Engine for Marko-Time.
+Synchronized Lyrics Engine for My-Music.
 Fetches line-by-line synced LRC lyrics and plain text lyrics from LRCLIB (open-source database)
 with fallback fuzzy matching, saves companion .lrc files, and embeds lyrics into audio tags.
 """
@@ -13,7 +13,7 @@ import requests
 LRCLIB_BASE_URL = "https://lrclib.net/api"
 _SESSION = requests.Session()
 _SESSION.headers.update({
-    "User-Agent": "Marko-Time Music Downloader/1.1.0 (https://github.com/sudo-shakuni/marko-time)"
+    "User-Agent": "My-Music Music Downloader/1.1.0 (https://github.com/sudo-shakuni/my-music)"
 })
 
 _LYRICS_CACHE: Dict[str, Optional[Dict[str, Any]]] = {}

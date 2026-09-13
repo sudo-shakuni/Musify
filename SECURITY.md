@@ -8,7 +8,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security issue or vulnerability in Marko-Time:
+If you discover a security issue or vulnerability in My-Music:
 1. Please **do not** open a public GitHub issue.
 2. Report the vulnerability privately via GitHub Security Advisories on this repository or contact the maintainer directly.
 3. We will review and address critical vulnerabilities promptly.

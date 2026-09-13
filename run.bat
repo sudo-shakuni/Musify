@@ -1,9 +1,9 @@
 @echo off
-title Marko-Time
+title My-Music
 cd /d "%~dp0"
 
 echo ========================================================
-echo   Marko-Time — Studio-Grade Music Downloader
+echo   My-Music — Studio-Grade Music Downloader
 echo ========================================================
 echo.
 
@@ -57,7 +57,7 @@ echo [3/3] Verifying FFmpeg audio engine...
 
 echo.
 echo ========================================================
-echo   Launching Marko-Time — Studio-Grade Music Downloader
+echo   Launching My-Music — Studio-Grade Music Downloader
 echo ========================================================
 echo.
 

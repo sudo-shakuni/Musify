@@ -1,6 +1,6 @@
-# Contributing to Marko-Time 🎵
+# Contributing to My-Music 🎵
 
-Thank you for your interest in contributing to **Marko-Time**! We welcome contributions from developers, designers, and music enthusiasts worldwide.
+Thank you for your interest in contributing to **My-Music**! We welcome contributions from developers, designers, and music enthusiasts worldwide.
 
 ---
 

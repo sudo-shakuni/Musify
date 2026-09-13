@@ -1,4 +1,4 @@
-name: Marko-Time CI & Quality Checks
+name: My-Music CI & Quality Checks
 
 on:
   push:
