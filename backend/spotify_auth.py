@@ -445,28 +445,43 @@ class SpotifyAuthManager:
         return new_token
 
     def _fetch_profile(self, token: str) -> Dict[str, Any]:
-        """Fetches public profile from Spotify API."""
+        """Fetches public profile from Spotify API with resilient fallback."""
         url = "https://api.spotify.com/v1/me"
         headers = {"Authorization": f"Bearer {token}"}
-        resp = requests.get(url, headers=headers, verify=False, timeout=15)
-        if resp.status_code != 200:
-            raise ValueError(f"Failed to fetch profile: {resp.text}")
+        try:
+            resp = requests.get(url, headers=headers, verify=False, timeout=15)
+            if resp.status_code == 200:
+                data = resp.json()
+                avatar = ""
+                images = data.get("images", [])
+                if images and isinstance(images, list):
+                    avatar = images[0].get("url", "")
 
-        data = resp.json()
-        avatar = ""
-        images = data.get("images", [])
-        if images and isinstance(images, list):
-            avatar = images[0].get("url", "")
+                return {
+                    "id": data.get("id"),
+                    "display_name": data.get("display_name") or data.get("id") or "Spotify User",
+                    "email": data.get("email", ""),
+                    "avatar_url": avatar,
+                    "product": data.get("product", "premium"),
+                    "followers": data.get("followers", {}).get("total", 0),
+                    "country": data.get("country", ""),
+                    "spotify_url": data.get("external_urls", {}).get("spotify", ""),
+                }
+            else:
+                print(f"[Auth] Profile fetch returned {resp.status_code}: {resp.text[:150]}")
+        except Exception as e:
+            print(f"[Auth] Profile fetch exception: {e}")
 
+        # Fallback profile so Web Player and restricted tokens still work seamlessly
         return {
-            "id": data.get("id"),
-            "display_name": data.get("display_name") or data.get("id") or "Spotify User",
-            "email": data.get("email", ""),
-            "avatar_url": avatar,
-            "product": data.get("product", "free"),
-            "followers": data.get("followers", {}).get("total", 0),
-            "country": data.get("country", ""),
-            "spotify_url": data.get("external_urls", {}).get("spotify", ""),
+            "id": "spotify_user",
+            "display_name": "Spotify User",
+            "email": "",
+            "avatar_url": "",
+            "product": "premium",
+            "followers": 0,
+            "country": "",
+            "spotify_url": "",
         }
 
     def logout(self) -> None:

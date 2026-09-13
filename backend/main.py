@@ -434,10 +434,10 @@ class SpDcCookieRequest(BaseModel):
 def authenticate_with_sp_dc_cookie(req: SpDcCookieRequest):
     """
     Accepts an sp_dc cookie value, exchanges it for an access token, and authenticates.
-    This is the most reliable method when browsers have locked cookie DBs.
     """
     sp_dc = req.sp_dc.strip()
     if not sp_dc or len(sp_dc) < 20:
+        print(f"[Auth Error] User provided invalid sp_dc cookie (length {len(sp_dc)}): {sp_dc[:10]}...")
         raise HTTPException(status_code=400, detail="Invalid sp_dc cookie value. It should be a long string starting with 'AQ...'")
 
     try:
@@ -447,6 +447,9 @@ def authenticate_with_sp_dc_cookie(req: SpDcCookieRequest):
         user_info = spotify_auth.set_manual_token(access_token)
         return {"success": True, "user": user_info}
     except Exception as e:
+        import traceback
+        print(f"[Auth Error] Failed to exchange sp_dc cookie: {e}")
+        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 
@@ -455,10 +458,13 @@ def set_manual_spotify_token(req: ManualAuthRequest):
     tok = req.access_token or req.token
     if not tok:
         raise HTTPException(status_code=400, detail="access_token or token is required.")
+    print(f"[Manual Auth] Received token of length {len(tok)}, preview: {tok[:15]}...")
     try:
         user_info = spotify_auth.set_manual_token(tok)
+        print(f"[Manual Auth Success] User: {user_info.get('display_name')}")
         return {"success": True, "user": user_info}
     except Exception as e:
+        print(f"[Manual Auth Error] {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
 
