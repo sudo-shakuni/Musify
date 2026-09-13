@@ -245,15 +245,36 @@ def exchange_sp_dc_for_token(sp_dc: str) -> Dict[str, Any]:
         "Accept-Language": "en-US,en;q=0.9",
         "Referer": "https://open.spotify.com/",
         "Origin": "https://open.spotify.com",
-        "Cookie": f"sp_dc={sp_dc}",
+        "Cookie": f"sp_dc={sp_dc}"
     }
 
-    resp = requests.get(url, headers=headers, timeout=15, verify=False)
-    if resp.status_code != 200:
-        raise ValueError(f"Spotify rejected the session cookie (HTTP {resp.status_code}). "
-                         "Your Spotify session may have expired. Please log into open.spotify.com in your browser and try again.")
+    import urllib.request
+    import json
+    
+    req = urllib.request.Request(url, headers=headers)
+    try:
+        import ssl
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(req, context=ctx, timeout=15) as response:
+            resp_body = response.read().decode('utf-8')
+            status_code = response.status
+    except urllib.error.HTTPError as e:
+        status_code = e.code
+        resp_body = e.read().decode('utf-8')
+    except Exception as e:
+        raise ValueError(f"Failed to connect to Spotify: {e}")
 
-    data = resp.json()
+    if status_code != 200:
+        print(f"[Auth Error] Spotify API returned {status_code}: {resp_body[:200]}")
+        raise ValueError(f"Spotify rejected the session cookie (HTTP {status_code}). "
+                         "Your Spotify session may have expired or the cookie was copied incorrectly. Please log into open.spotify.com and copy sp_dc again.")
+
+    try:
+        data = json.loads(resp_body)
+    except Exception:
+        raise ValueError("Spotify returned invalid JSON data.")
     access_token = data.get("accessToken")
     if not access_token:
         raise ValueError("Spotify returned empty access token. Your session cookie may be invalid or expired.")
