@@ -97,6 +97,8 @@ const elements = {
   inputSpDcCookie: document.getElementById("input-sp-dc-cookie"),
   btnSubmitSpDc: document.getElementById("btn-submit-sp-dc"),
   linkOpenSpotifyWeb: document.getElementById("link-open-spotify-web"),
+  btnCopySnippet: document.getElementById("btn-copy-snippet"),
+  codeTokenSnippet: document.getElementById("code-token-snippet"),
 
   fetchForm: document.getElementById("fetch-form"),
   playlistUrlInput: document.getElementById("playlist-url"),
@@ -539,6 +541,12 @@ function setupEventListeners() {
   }
   if (elements.btnSubmitSpDc) {
     elements.btnSubmitSpDc.addEventListener("click", handleSpDcSubmit);
+  }
+  if (elements.btnCopySnippet) {
+    elements.btnCopySnippet.addEventListener("click", copyTokenSnippet);
+  }
+  if (elements.codeTokenSnippet) {
+    elements.codeTokenSnippet.addEventListener("click", copyTokenSnippet);
   }
   if (elements.linkOpenSpotifyWeb) {
     elements.linkOpenSpotifyWeb.addEventListener("click", (e) => {
@@ -1889,6 +1897,16 @@ async function startGoogleOrBrowserAuth() {
   } catch (err) {
     if (elements.authWaitingBanner) elements.authWaitingBanner.classList.add("hidden");
     showToast("Authentication error: " + err.message, "error", 4000);
+  }
+}
+
+async function copyTokenSnippet() {
+  const snippet = `fetch('/get_access_token?reason=transport&productType=web_player').then(r=>r.json()).then(d=>{prompt('YOUR SPOTIFY TOKEN (Press Ctrl+C):',d.accessToken);});`;
+  try {
+    await navigator.clipboard.writeText(snippet);
+    showToast("📋 1-Line command copied! Paste it in the Console on open.spotify.com", "success", 4500);
+  } catch (_) {
+    showToast("Selected snippet. Press Ctrl+C to copy.", "info");
   }
 }
 
