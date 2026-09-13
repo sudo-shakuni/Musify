@@ -3154,3 +3154,96 @@ textarea:focus-visible {
   animation: spin 0.8s linear infinite;
   flex-shrink: 0;
 }
+
+/* Auth Steps for sp_dc cookie flow */
+.auth-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.auth-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.84rem;
+  color: var(--text-secondary, #b3b3b3);
+  line-height: 1.4;
+}
+
+.step-num {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  border-radius: 50%;
+  background: rgba(29, 185, 84, 0.2);
+  color: #1db954;
+  font-size: 0.72rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.auth-step kbd {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.78rem;
+  font-family: inherit;
+  color: #fff;
+}
+
+.auth-step code {
+  background: rgba(29, 185, 84, 0.15);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.78rem;
+  color: #1db954;
+  font-weight: 600;
+}
+
+.auth-status-msg {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.auth-status-msg.error {
+  background: rgba(255, 85, 85, 0.12);
+  border: 1px solid rgba(255, 85, 85, 0.3);
+  color: #ff6b6b;
+}
+
+.auth-status-msg.success {
+  background: rgba(29, 185, 84, 0.12);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  color: #1ed760;
+}
+
+.auth-status-msg.loading {
+  background: rgba(29, 185, 84, 0.08);
+  border: 1px solid rgba(29, 185, 84, 0.2);
+  color: #b3b3b3;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.btn-success {
+  background: #1db954 !important;
+  color: #000 !important;
+  font-weight: 700 !important;
+  border-radius: var(--radius-md, 8px) !important;
+}
+
+.btn-success:hover {
+  background: #1ed760 !important;
+}
+

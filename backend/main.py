@@ -405,6 +405,51 @@ def spotify_oauth_callback(code: Optional[str] = None, state: Optional[str] = No
         return HTMLResponse(f"<h3 style='color:#ff5555;'>Authentication Failed: {e}</h3><p style='color:#888;'>Please return to Musify and try again.</p>")
 
 
+@app.post("/api/spotify/auth/auto_grab")
+def auto_grab_spotify_token():
+    """
+    Automatically scans Chrome/Edge/Brave for Spotify session cookie (sp_dc),
+    exchanges it for an access token, and authenticates the user in 1 click.
+    """
+    try:
+        from backend.cookie_grabber import auto_grab_and_authenticate, exchange_sp_dc_for_token
+        token_data = auto_grab_and_authenticate()
+        access_token = token_data["access_token"]
+        user_info = spotify_auth.set_manual_token(access_token)
+        return {
+            "success": True,
+            "user": user_info,
+            "source": token_data.get("source_browser", "browser"),
+        }
+    except Exception as e:
+        # Return the error but don't raise — frontend will fallback to manual methods
+        return {"success": False, "error": str(e)}
+
+
+class SpDcCookieRequest(BaseModel):
+    sp_dc: str
+
+
+@app.post("/api/spotify/auth/cookie")
+def authenticate_with_sp_dc_cookie(req: SpDcCookieRequest):
+    """
+    Accepts an sp_dc cookie value, exchanges it for an access token, and authenticates.
+    This is the most reliable method when browsers have locked cookie DBs.
+    """
+    sp_dc = req.sp_dc.strip()
+    if not sp_dc or len(sp_dc) < 20:
+        raise HTTPException(status_code=400, detail="Invalid sp_dc cookie value. It should be a long string starting with 'AQ...'")
+
+    try:
+        from backend.cookie_grabber import exchange_sp_dc_for_token
+        token_data = exchange_sp_dc_for_token(sp_dc)
+        access_token = token_data["access_token"]
+        user_info = spotify_auth.set_manual_token(access_token)
+        return {"success": True, "user": user_info}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.post("/api/spotify/auth/manual")
 def set_manual_spotify_token(req: ManualAuthRequest):
     tok = req.access_token or req.token

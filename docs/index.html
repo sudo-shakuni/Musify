@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Musify — Studio-Grade Music & Playlist Downloader</title>
-  <link rel="icon" type="image/jpeg" href="logo.jpg">
-  <link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+  <link rel="stylesheet" href="/static/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -614,36 +614,71 @@
         </div>
 
         <div class="auth-modal-body">
-          <!-- Method 1: Google & Browser Authorization -->
+          <!-- Method 1: 1-Click Auto-Grab from Browser -->
           <div class="auth-method-card active">
             <div class="auth-method-header">
-              <span class="auth-badge-recommended">RECOMMENDED</span>
-              <h3 class="auth-method-title">Browser Authorization</h3>
-              <p class="auth-method-desc">Opens in your default browser (Chrome/Edge) where your Spotify or Google account is already logged in. Zero webview blocks!</p>
+              <span class="auth-badge-recommended">RECOMMENDED • 1 CLICK</span>
+              <h3 class="auth-method-title">Auto-Connect from Browser</h3>
+              <p class="auth-method-desc">Instantly grabs your Spotify session from Chrome, Edge, or Brave. Just make sure you're logged into <strong>open.spotify.com</strong> in any browser.</p>
             </div>
 
+            <button type="button" id="btn-auto-grab" class="btn btn-spotify btn-block btn-large">
+              <i data-lucide="zap"></i>
+              <span>⚡ 1-Click Auto Connect</span>
+            </button>
+
+            <div id="auto-grab-status" class="auth-status-msg hidden"></div>
+          </div>
+
+          <div class="auth-divider">
+            <span>IF AUTO-CONNECT FAILS, USE THIS</span>
+          </div>
+
+          <!-- Method 2: Paste sp_dc Cookie (most reliable) -->
+          <div class="auth-method-card">
+            <h3 class="auth-method-title">Paste Spotify Cookie (sp_dc)</h3>
+            <p class="auth-method-desc" style="margin-bottom: 10px;">This works 100% of the time. Takes 30 seconds:</p>
+            <div class="auth-steps">
+              <div class="auth-step">
+                <span class="step-num">1</span>
+                <span>Open <a href="#" id="link-open-spotify-web" style="color: #1db954; text-decoration: underline;">open.spotify.com</a> in your browser and make sure you're logged in</span>
+              </div>
+              <div class="auth-step">
+                <span class="step-num">2</span>
+                <span>Press <kbd>F12</kbd> → Click <strong>Application</strong> tab → <strong>Cookies</strong> → <strong>open.spotify.com</strong></span>
+              </div>
+              <div class="auth-step">
+                <span class="step-num">3</span>
+                <span>Find <code>sp_dc</code> in the list, double-click its <strong>Value</strong>, and copy it</span>
+              </div>
+            </div>
+            <div class="manual-token-input-row" style="margin-top: 12px;">
+              <input type="password" id="input-sp-dc-cookie" placeholder="Paste your sp_dc cookie value here (starts with AQ...)" autocomplete="off" />
+              <button type="button" id="btn-submit-sp-dc" class="btn btn-success">
+                Connect
+              </button>
+            </div>
+          </div>
+
+          <div class="auth-divider">
+            <span>OR USE BROWSER LOGIN / ACCESS TOKEN</span>
+          </div>
+
+          <!-- Method 3: Browser OAuth & Manual Token -->
+          <div class="auth-method-card">
             <div class="auth-actions-stack">
-              <!-- Google / Gmail Login Button -->
-              <button type="button" id="btn-modal-google-login" class="btn btn-google btn-block btn-large">
-                <svg viewBox="0 0 24 24" width="22" height="22" class="google-icon">
+              <button type="button" id="btn-modal-google-login" class="btn btn-google btn-block">
+                <svg viewBox="0 0 24 24" width="20" height="20" class="google-icon">
                   <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                   <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
                 </svg>
-                <span>Continue with Google (Gmail Account)</span>
+                <span>Continue with Google / Spotify Login</span>
               </button>
 
-              <!-- Standard Spotify Login Button -->
-              <button type="button" id="btn-modal-oauth-login" class="btn btn-spotify btn-block">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                  <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.521 17.34c-.24.37-.73.49-1.1.25-3.01-1.84-6.8-2.26-11.26-1.24-.42.1-.84-.16-.94-.58-.1-.42.16-.84.58-.94 4.88-1.12 9.07-.64 12.47 1.41.37.24.49.73.25 1.1zm1.48-3.31c-.3.46-.92.61-1.38.31-3.46-2.13-8.73-2.75-12.82-1.51-.52.16-1.07-.14-1.23-.66-.16-.52.14-1.07.66-1.23 4.67-1.42 10.49-.72 14.46 1.71.46.3.61.92.31 1.38zm.13-3.45C15.02 8.35 8.24 8.12 4.3 9.32c-.63.19-1.3-.17-1.49-.8-.19-.63.17-1.3.8-1.49 4.54-1.38 12.01-1.11 16.66 1.65.57.34.76 1.08.42 1.65-.34.57-1.08.76-1.65.42z"/>
-                </svg>
-                <span>Continue with Spotify Login</span>
-              </button>
-
-              <button type="button" id="btn-copy-auth-link" class="btn-text-link" title="Copy authorization link to paste in any browser">
-                <i data-lucide="copy"></i> Copy Link to Clipboard
+              <button type="button" id="btn-modal-oauth-login" class="btn btn-secondary btn-block" style="display:none;">
+                Continue with Spotify OAuth
               </button>
             </div>
 
@@ -651,21 +686,15 @@
               <div class="spinner-small"></div>
               <span>Browser opened! Complete login in your browser — this window will link automatically.</span>
             </div>
-          </div>
 
-          <div class="auth-divider">
-            <span>OR CONNECT WITH ACCESS TOKEN</span>
-          </div>
-
-          <!-- Method 2: Manual Token -->
-          <div class="auth-method-card">
-            <h3 class="auth-method-title">Enter Spotify Access Token</h3>
-            <p class="auth-method-desc">Paste an OAuth access token from Spotify Developer Console or Web Player.</p>
-            <div class="manual-token-input-row">
-              <input type="password" id="input-manual-token" placeholder="Bearer BQC... (Spotify access token)" autocomplete="off" />
-              <button type="button" id="btn-submit-manual-token" class="btn btn-secondary">
-                Connect
-              </button>
+            <div style="margin-top: 14px;">
+              <h4 style="color: #b3b3b3; font-size: 0.82rem; margin: 0 0 8px;">Or paste a Spotify Access Token directly:</h4>
+              <div class="manual-token-input-row">
+                <input type="password" id="input-manual-token" placeholder="Bearer BQC... (access token)" autocomplete="off" />
+                <button type="button" id="btn-submit-manual-token" class="btn btn-secondary">
+                  Connect
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -739,6 +768,6 @@
 
   </div>
 
-  <script src="app.js"></script>
+  <script src="/static/app.js"></script>
 </body>
 </html>

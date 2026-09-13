@@ -92,6 +92,11 @@ const elements = {
   authWaitingBanner: document.getElementById("auth-waiting-banner"),
   inputManualToken: document.getElementById("input-manual-token"),
   btnSubmitManualToken: document.getElementById("btn-submit-manual-token"),
+  btnAutoGrab: document.getElementById("btn-auto-grab"),
+  autoGrabStatus: document.getElementById("auto-grab-status"),
+  inputSpDcCookie: document.getElementById("input-sp-dc-cookie"),
+  btnSubmitSpDc: document.getElementById("btn-submit-sp-dc"),
+  linkOpenSpotifyWeb: document.getElementById("link-open-spotify-web"),
 
   fetchForm: document.getElementById("fetch-form"),
   playlistUrlInput: document.getElementById("playlist-url"),
@@ -528,6 +533,24 @@ function setupEventListeners() {
   }
   if (elements.btnSubmitManualToken) {
     elements.btnSubmitManualToken.addEventListener("click", handleManualTokenSubmit);
+  }
+  if (elements.btnAutoGrab) {
+    elements.btnAutoGrab.addEventListener("click", handleAutoGrab);
+  }
+  if (elements.btnSubmitSpDc) {
+    elements.btnSubmitSpDc.addEventListener("click", handleSpDcSubmit);
+  }
+  if (elements.linkOpenSpotifyWeb) {
+    elements.linkOpenSpotifyWeb.addEventListener("click", (e) => {
+      e.preventDefault();
+      fetch('/api/system/open-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: 'https://open.spotify.com' })
+      }).catch(() => {
+        window.open('https://open.spotify.com', '_blank');
+      });
+    });
   }
 
   // Spotify Logout & Refresh
@@ -1927,7 +1950,86 @@ async function handleManualTokenSubmit() {
   } finally {
     if (elements.btnSubmitManualToken) {
       elements.btnSubmitManualToken.disabled = false;
-      elements.btnSubmitManualToken.textContent = "Connect with Token";
+      elements.btnSubmitManualToken.textContent = "Connect";
+    }
+  }
+}
+
+async function handleAutoGrab() {
+  if (elements.btnAutoGrab) {
+    elements.btnAutoGrab.disabled = true;
+    elements.btnAutoGrab.innerHTML = '<div class="spinner-small" style="display:inline-block; margin-right:8px; border-top-color:#000;"></div> <span>Grabbing session...</span>';
+  }
+  const statusEl = elements.autoGrabStatus;
+  if (statusEl) {
+    statusEl.className = 'auth-status-msg loading';
+    statusEl.innerHTML = '<div class="spinner-small"></div> <span>Scanning browsers for Spotify session...</span>';
+    statusEl.classList.remove('hidden');
+  }
+
+  try {
+    const res = await fetch("/api/spotify/auth/auto_grab", { method: "POST" });
+    const data = await res.json();
+    
+    if (data.success && data.user) {
+      if (statusEl) {
+        statusEl.className = 'auth-status-msg success';
+        statusEl.textContent = `Found session in ${data.source}! Connected as ${data.user.display_name}.`;
+      }
+      setTimeout(() => {
+        closeSpotifyAuthModal();
+        showToast(`🎉 Connected as ${data.user.display_name} via ${data.source}!`, "success", 4000);
+        checkSpotifyAuth(true);
+        switchNavTab("library");
+      }, 1500);
+    } else {
+      throw new Error(data.error || "Could not find a valid session");
+    }
+  } catch (err) {
+    if (statusEl) {
+      statusEl.className = 'auth-status-msg error';
+      statusEl.textContent = "Auto-connect failed: " + err.message;
+    }
+  } finally {
+    if (elements.btnAutoGrab) {
+      elements.btnAutoGrab.disabled = false;
+      elements.btnAutoGrab.innerHTML = '<i data-lucide="zap"></i> <span>⚡ 1-Click Auto Connect</span>';
+      if (window.lucide) window.lucide.createIcons();
+    }
+  }
+}
+
+async function handleSpDcSubmit() {
+  const cookieVal = elements.inputSpDcCookie ? elements.inputSpDcCookie.value.trim() : "";
+  if (!cookieVal || cookieVal.length < 20) {
+    showToast("Please enter a valid sp_dc cookie (starts with AQ...)", "warning", 4000);
+    return;
+  }
+  if (elements.btnSubmitSpDc) {
+    elements.btnSubmitSpDc.disabled = true;
+    elements.btnSubmitSpDc.textContent = "Connecting...";
+  }
+  try {
+    const res = await fetch("/api/spotify/auth/cookie", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sp_dc: cookieVal }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.detail || "Authentication failed with provided cookie");
+    }
+    if (elements.inputSpDcCookie) elements.inputSpDcCookie.value = "";
+    closeSpotifyAuthModal();
+    showToast(`🎉 Connected successfully as ${data.user.display_name}!`, "success", 4000);
+    checkSpotifyAuth(true);
+    switchNavTab("library");
+  } catch (err) {
+    showToast("Failed to link cookie: " + err.message, "error", 5000);
+  } finally {
+    if (elements.btnSubmitSpDc) {
+      elements.btnSubmitSpDc.disabled = false;
+      elements.btnSubmitSpDc.textContent = "Connect";
     }
   }
 }
