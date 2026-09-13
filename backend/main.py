@@ -333,6 +333,26 @@ def get_spotify_auth_status():
     return {"authenticated": is_auth, "user": user}
 
 
+class BrowserAuthRequest(BaseModel):
+    client_id: Optional[str] = None
+    redirect_uri: Optional[str] = None
+
+
+@app.post("/api/spotify/auth/launch_browser")
+def launch_browser_spotify_auth(payload: Optional[BrowserAuthRequest] = None):
+    """
+    Spins up callback listener on port 9900 and opens Spotify authorization
+    in the default system browser (Chrome/Edge/Firefox) for 1-click Google/Gmail login.
+    """
+    try:
+        cid = payload.client_id if payload else None
+        r_uri = payload.redirect_uri if payload else None
+        res = spotify_auth.launch_browser_auth(client_id=cid, redirect_uri=r_uri)
+        return {"success": True, "url": res["url"], "state": res["state"]}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.get("/api/spotify/auth/login_url")
 def get_spotify_login_url(client_id: Optional[str] = None, redirect_uri: Optional[str] = None):
     try:

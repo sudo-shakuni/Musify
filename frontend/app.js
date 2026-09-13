@@ -86,7 +86,10 @@ const elements = {
   libraryPlaylistsGrid: document.getElementById("library-playlists-grid"),
   spotifyAuthModal: document.getElementById("spotify-auth-modal"),
   btnCloseAuthModal: document.getElementById("btn-close-auth-modal"),
+  btnModalGoogleLogin: document.getElementById("btn-modal-google-login"),
   btnModalOauthLogin: document.getElementById("btn-modal-oauth-login"),
+  btnCopyAuthLink: document.getElementById("btn-copy-auth-link"),
+  authWaitingBanner: document.getElementById("auth-waiting-banner"),
   inputManualToken: document.getElementById("input-manual-token"),
   btnSubmitManualToken: document.getElementById("btn-submit-manual-token"),
 
@@ -514,8 +517,14 @@ function setupEventListeners() {
       if (e.target === elements.spotifyAuthModal) closeSpotifyAuthModal();
     });
   }
+  if (elements.btnModalGoogleLogin) {
+    elements.btnModalGoogleLogin.addEventListener("click", startGoogleOrBrowserAuth);
+  }
   if (elements.btnModalOauthLogin) {
-    elements.btnModalOauthLogin.addEventListener("click", startSpotifyOAuth);
+    elements.btnModalOauthLogin.addEventListener("click", startGoogleOrBrowserAuth);
+  }
+  if (elements.btnCopyAuthLink) {
+    elements.btnCopyAuthLink.addEventListener("click", copySpotifyAuthLink);
   }
   if (elements.btnSubmitManualToken) {
     elements.btnSubmitManualToken.addEventListener("click", handleManualTokenSubmit);
@@ -1805,26 +1814,78 @@ function closeSpotifyAuthModal() {
   }
 }
 
-async function startSpotifyOAuth() {
+let authPollInterval = null;
+
+async function startGoogleOrBrowserAuth() {
+  try {
+    if (elements.authWaitingBanner) {
+      elements.authWaitingBanner.classList.remove("hidden");
+    }
+    showToast("🌐 Launching Spotify in default browser for Google sign in...", "info", 4000);
+
+    const res = await fetch("/api/spotify/auth/launch_browser", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({})
+    });
+    const data = await res.json();
+
+    if (!data.success) {
+      throw new Error(data.detail || "Failed to launch browser authentication");
+    }
+
+    // Start polling status every 1.5s for completion
+    if (authPollInterval) clearInterval(authPollInterval);
+    let attempts = 0;
+    const maxAttempts = 80; // 2 minutes
+
+    authPollInterval = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(authPollInterval);
+        authPollInterval = null;
+        if (elements.authWaitingBanner) elements.authWaitingBanner.classList.add("hidden");
+        return;
+      }
+
+      try {
+        const sRes = await fetch("/api/spotify/auth/status");
+        const sData = await sRes.json();
+        if (sData.authenticated && sData.user) {
+          clearInterval(authPollInterval);
+          authPollInterval = null;
+          if (elements.authWaitingBanner) elements.authWaitingBanner.classList.add("hidden");
+          closeSpotifyAuthModal();
+          showToast(`🎉 Connected to Spotify as ${sData.user.display_name}!`, "success", 4500);
+          checkSpotifyAuth(true);
+          switchNavTab("library");
+        }
+      } catch (_) {}
+    }, 1500);
+
+  } catch (err) {
+    if (elements.authWaitingBanner) elements.authWaitingBanner.classList.add("hidden");
+    showToast("Authentication error: " + err.message, "error", 4000);
+  }
+}
+
+async function copySpotifyAuthLink() {
   try {
     const res = await fetch("/api/spotify/auth/login_url");
     const data = await res.json();
     if (data.url) {
-      const width = 560;
-      const height = 720;
-      const left = window.screenX + (window.outerWidth - width) / 2;
-      const top = window.screenY + (window.outerHeight - height) / 2;
-      window.open(
-        data.url,
-        "SpotifyLoginPopup",
-        `width=${width},height=${height},left=${left},top=${top},status=0,toolbar=0,menubar=0,location=0`
-      );
+      await navigator.clipboard.writeText(data.url);
+      showToast("📋 Spotify login link copied! Paste into any browser window.", "success", 4000);
     } else {
-      showToast("Could not generate Spotify login URL", "error");
+      showToast("Could not generate login link", "error");
     }
   } catch (err) {
-    showToast("OAuth login error: " + err.message, "error");
+    showToast("Copy error: " + err.message, "error");
   }
+}
+
+async function startSpotifyOAuth() {
+  return startGoogleOrBrowserAuth();
 }
 
 function handleSpotifyAuthMessage(event) {

@@ -3051,3 +3051,106 @@ textarea:focus-visible {
   color: #ffffff;
 }
 
+
+
+/* Google & Spotify Auth Modal Enhancements */
+.auth-actions-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.btn-google {
+  background: #ffffff !important;
+  color: #1f1f1f !important;
+  font-weight: 600 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  border-radius: 28px !important;
+  padding: 12px 20px !important;
+  font-size: 0.92rem !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+  cursor: pointer !important;
+}
+
+.btn-google:hover {
+  background: #f1f3f4 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 6px 20px rgba(255, 255, 255, 0.2) !important;
+}
+
+.btn-google:active {
+  transform: translateY(1px) !important;
+}
+
+.btn-google .google-icon {
+  flex-shrink: 0;
+}
+
+.btn-spotify {
+  background: #1db954 !important;
+  color: #000000 !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  border-radius: 28px !important;
+  padding: 10px 20px !important;
+  font-size: 0.9rem !important;
+  transition: transform 0.15s ease, background-color 0.2s ease !important;
+  cursor: pointer !important;
+}
+
+.btn-spotify:hover {
+  background: #1ed760 !important;
+  transform: translateY(-1px) !important;
+}
+
+.btn-text-link {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary, #b3b3b3);
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 6px;
+  transition: color 0.2s ease;
+  margin-top: 4px;
+}
+
+.btn-text-link:hover {
+  color: #ffffff;
+}
+
+.auth-waiting-banner {
+  margin-top: 14px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  background: rgba(29, 185, 84, 0.12);
+  border: 1px solid rgba(29, 185, 84, 0.3);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #1ed760;
+  animation: fadeIn 0.3s ease;
+}
+
+.spinner-small {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(30, 215, 96, 0.3);
+  border-top-color: #1ed760;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}

@@ -6,12 +6,16 @@ user profile extraction, personal playlist browsing, and 'Liked Songs' retrieval
 
 import base64
 import hashlib
+import http.server
 import json
 import os
 import re
 import secrets
+import socketserver
 import threading
 import time
+import urllib.parse
+import webbrowser
 from typing import Any, Dict, List, Optional, Tuple
 import requests
 
@@ -54,10 +58,11 @@ SCOPES = [
     "user-library-read",
 ]
 
-DEFAULT_REDIRECT_URI = "http://127.0.0.1:8800/api/spotify/callback"
-
-# Public fallback client ID for frictionless 1-click Spotify OAuth (PKCE flow)
+# Registered redirect URI for official SpotDL client ID on port 9900
+DEFAULT_REDIRECT_URI = "http://127.0.0.1:9900/"
 FALLBACK_CLIENT_ID = "5f573c9620494bae87890c0f08a60293"
+FALLBACK_CLIENT_SECRET = "212476d9b0f3472eaa762d90b19b0ba8"
+PORT_8800_REDIRECT_URI = "http://127.0.0.1:8800/api/spotify/callback" 
 
 
 def get_auth_storage_path() -> str:
@@ -79,6 +84,147 @@ def _generate_pkce_pair() -> Tuple[str, str]:
     return code_verifier, code_challenge
 
 
+
+class OAuthCallbackListener:
+    """
+    Runs a lightweight local HTTP daemon on 127.0.0.1:9900 to catch
+    the Spotify OAuth callback from the user's default browser (Chrome/Edge).
+    """
+
+    def __init__(self, auth_manager: "SpotifyAuthManager", port: int = 9900):
+        self.auth_manager = auth_manager
+        self.port = port
+        self.server: Optional[socketserver.TCPServer] = None
+        self.thread: Optional[threading.Thread] = None
+        self.is_running = False
+        self._lock = threading.Lock()
+
+    def start(self, timeout: int = 300) -> None:
+        with self._lock:
+            if self.is_running:
+                return
+
+            manager = self.auth_manager
+            listener_self = self
+
+            class CallbackHandler(http.server.BaseHTTPRequestHandler):
+                def log_message(self, format, *args):
+                    pass  # Quiet logging
+
+                def do_GET(self):
+                    parsed = urllib.parse.urlparse(self.path)
+                    params = urllib.parse.parse_qs(parsed.query)
+                    code = params.get("code", [None])[0]
+                    state = params.get("state", [None])[0]
+                    error = params.get("error", [None])[0]
+
+                    self.send_response(200)
+                    self.send_header("Content-Type", "text/html; charset=utf-8")
+                    self.end_headers()
+
+                    if error:
+                        html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Musify — Spotify Connection Error</title>
+    <style>
+        body {{ background: #121212; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+        .card {{ background: #181818; padding: 40px; border-radius: 16px; text-align: center; border: 1px solid #333; max-width: 440px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }}
+        h2 {{ color: #ff5555; margin-top: 0; }}
+        p {{ color: #b3b3b3; line-height: 1.5; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Authentication Cancelled</h2>
+        <p>{error}</p>
+        <p style="color: #777; font-size: 13px;">You may close this window and return to Musify.</p>
+    </div>
+</body>
+</html>"""
+                        self.wfile.write(html.encode("utf-8"))
+                    elif code:
+                        try:
+                            user_info = manager.exchange_code(code, state or "")
+                            user_name = user_info.get("display_name", "Spotify User")
+                            html = f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Connected to Musify!</title>
+    <style>
+        body {{ background: #121212; color: #fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }}
+        .card {{ background: #181818; padding: 45px; border-radius: 20px; text-align: center; border: 1px solid #282828; max-width: 460px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }}
+        .icon-circle {{ width: 68px; height: 68px; background: #1DB954; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; }}
+        h2 {{ color: #fff; margin: 0 0 8px; font-size: 24px; font-weight: 700; }}
+        .user-highlight {{ color: #1DB954; }}
+        p {{ color: #b3b3b3; line-height: 1.5; font-size: 14px; margin: 0 0 24px; }}
+        .badge {{ background: #1DB95420; color: #1DB954; border: 1px solid #1DB95440; padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; margin-bottom: 16px; }}
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon-circle">
+            <svg viewBox="0 0 24 24" width="38" height="38" fill="#000"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+        </div>
+        <div class="badge">CONNECTED TO MUSIFY</div>
+        <h2>Welcome, <span class="user-highlight">{user_name}</span>!</h2>
+        <p>Your Spotify account has been linked successfully.<br>You can safely close this tab and return to the Musify app.</p>
+    </div>
+    <script>
+        setTimeout(function() {{ window.close(); }}, 3500);
+    </script>
+</body>
+</html>"""
+                            self.wfile.write(html.encode("utf-8"))
+                        except Exception as ex:
+                            html = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><title>Error</title></head><body style="background:#121212;color:#fff;font-family:sans-serif;padding:40px;"><h2>Exchange Error</h2><p>{ex}</p></body></html>"""
+                            self.wfile.write(html.encode("utf-8"))
+                    else:
+                        self.wfile.write(b"<!DOCTYPE html><html><body style='background:#121212;color:#fff;'>Invalid request.</body></html>")
+
+                    # Gracefully stop listener thread after handling response
+                    threading.Thread(target=listener_self.stop, daemon=True).start()
+
+            class ReusableTCPServer(socketserver.TCPServer):
+                allow_reuse_address = True
+
+            try:
+                self.server = ReusableTCPServer(("127.0.0.1", self.port), CallbackHandler)
+                self.is_running = True
+
+                def run_loop():
+                    try:
+                        self.server.serve_forever()
+                    except Exception:
+                        pass
+                    finally:
+                        self.is_running = False
+
+                self.thread = threading.Thread(target=run_loop, daemon=True)
+                self.thread.start()
+
+                # Timeout cleanup
+                def timer():
+                    time.sleep(timeout)
+                    self.stop()
+
+                threading.Thread(target=timer, daemon=True).start()
+                print(f"[Auth] Dedicated OAuth callback listener running on port {self.port}")
+            except Exception as err:
+                print(f"[Auth] Warning: Could not bind to port {self.port} (may already be running): {err}")
+
+    def stop(self) -> None:
+        with self._lock:
+            if self.server and self.is_running:
+                try:
+                    self.server.shutdown()
+                    self.server.server_close()
+                except Exception:
+                    pass
+                self.is_running = False
+
 class SpotifyAuthManager:
     """Manages Spotify authentication lifecycle, profile, and user library."""
 
@@ -88,6 +234,7 @@ class SpotifyAuthManager:
         self.session_file = get_auth_storage_path()
         self.auth_data: Dict[str, Any] = self._load_session()
         self.pending_states: Dict[str, Dict[str, Any]] = {}
+        self.callback_listener = OAuthCallbackListener(self, port=9900)
 
     def _load_session(self) -> Dict[str, Any]:
         if os.path.exists(self.session_file):
@@ -150,6 +297,24 @@ class SpotifyAuthManager:
         url = f"https://accounts.spotify.com/authorize?{encoded_params}"
         return {"url": url, "state": state}
 
+    def launch_browser_auth(self, client_id: Optional[str] = None, redirect_uri: Optional[str] = None) -> Dict[str, str]:
+        """
+        Starts port 9900 callback listener and launches the official Spotify
+        authorization URL in the user's default system browser (Chrome/Edge/Firefox).
+        Enables seamless 'Continue with Google' without embedded webview blocks.
+        """
+        cid = client_id.strip() if client_id else self.auth_data.get("client_id") or FALLBACK_CLIENT_ID
+        r_uri = redirect_uri or DEFAULT_REDIRECT_URI
+
+        res = self.create_login_url(client_id=cid, redirect_uri=r_uri)
+        auth_url = res["url"]
+
+        if "127.0.0.1:9900" in r_uri or ":9900" in r_uri:
+            self.callback_listener.start(timeout=300)
+
+        webbrowser.open(auth_url)
+        return res
+
     def exchange_code(self, code: str, state: str) -> Dict[str, Any]:
         """Exchanges OAuth code for access token and fetches user profile."""
         with self._lock:
@@ -178,6 +343,12 @@ class SpotifyAuthManager:
 
         token_url = "https://accounts.spotify.com/api/token"
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
+
+        if client_id == FALLBACK_CLIENT_ID:
+            b64_auth = base64.b64encode(f"{FALLBACK_CLIENT_ID}:{FALLBACK_CLIENT_SECRET}".encode()).decode()
+            headers["Authorization"] = f"Basic {b64_auth}"
+        else:
+            data["client_id"] = client_id
 
         resp = requests.post(token_url, data=data, headers=headers, verify=False, timeout=15)
         if resp.status_code != 200:
@@ -251,9 +422,13 @@ class SpotifyAuthManager:
         data = {
             "grant_type": "refresh_token",
             "refresh_token": refresh_token,
-            "client_id": client_id,
         }
         headers = {"Content-Type": "application/x-www-form-urlencoded"}
+        if client_id == FALLBACK_CLIENT_ID:
+            b64_auth = base64.b64encode(f"{FALLBACK_CLIENT_ID}:{FALLBACK_CLIENT_SECRET}".encode()).decode()
+            headers["Authorization"] = f"Basic {b64_auth}"
+        else:
+            data["client_id"] = client_id
         resp = requests.post(token_url, data=data, headers=headers, verify=False, timeout=15)
         if resp.status_code != 200:
             raise ValueError(f"Failed to refresh token: {resp.text}")
