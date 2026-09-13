@@ -145,7 +145,7 @@ class OAuthCallbackListener:
         <div class="icon-circle">
             <svg viewBox="0 0 24 24" width="38" height="38" fill="#000"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
         </div>
-        <div class="badge">CONNECTED TO MUSIFY</div>
+        <div class="badge">CONNECTED TO MY-MUSIC</div>
         <h2>Welcome, <span class="user-highlight">{user_name}</span>!</h2>
         <p>Your Spotify account has been linked successfully.<br>You can safely close this tab and return to the My-Music app.</p>
     </div>
