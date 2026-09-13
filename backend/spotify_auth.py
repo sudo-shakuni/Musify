@@ -270,11 +270,13 @@ class SpotifyAuthManager:
             return self.auth_data.get("user")
 
     def create_login_url(self, client_id: Optional[str] = None, redirect_uri: Optional[str] = None) -> Dict[str, str]:
-        """Generates Spotify OAuth URL with PKCE security."""
+        """Generates Spotify OAuth URL (uses standard OAuth for SpotDL client, PKCE for public clients)."""
         cid = client_id.strip() if client_id else self.auth_data.get("client_id") or FALLBACK_CLIENT_ID
         r_uri = redirect_uri or DEFAULT_REDIRECT_URI
-        code_verifier, code_challenge = _generate_pkce_pair()
         state = secrets.token_hex(16)
+        is_spotdl = (cid == FALLBACK_CLIENT_ID)
+
+        code_verifier, code_challenge = (None, None) if is_spotdl else _generate_pkce_pair()
 
         with self._lock:
             self.pending_states[state] = {
@@ -290,9 +292,11 @@ class SpotifyAuthManager:
             "redirect_uri": r_uri,
             "state": state,
             "scope": " ".join(SCOPES),
-            "code_challenge_method": "S256",
-            "code_challenge": code_challenge,
         }
+        if code_challenge:
+            params["code_challenge_method"] = "S256"
+            params["code_challenge"] = code_challenge
+
         encoded_params = "&".join(f"{k}={requests.utils.quote(str(v))}" for k, v in params.items())
         url = f"https://accounts.spotify.com/authorize?{encoded_params}"
         return {"url": url, "state": state}
