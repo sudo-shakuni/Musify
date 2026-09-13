@@ -30,7 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.downloader import download_manager, open_folder_in_explorer
 from backend.lyrics import fetch_lyrics, parse_lrc_lines
 from backend.spotify_auth import spotify_auth
-from backend.spotify_meta import fetch_metadata
+from backend.universal_meta import resolve_universal_metadata as fetch_metadata
 from setup_ffmpeg import ensure_ffmpeg
 
 

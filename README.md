@@ -36,8 +36,11 @@
 
 ## ✨ Key Features
 
+- **🌐 Universal Multi-Platform Support**:
+  - Download songs, albums, and playlists from **Spotify**, **YouTube & YouTube Music**, **JioSaavn**, and **Amazon Music**.
+  - Single unified search bar automatically detects the platform and resolves high-res cover art and full metadata.
 - **⚡ 100% Free & Zero API Keys Required**:
-  - Leverages Spotify's public embed architecture to resolve track information without paid Spotify Developer accounts or rate-limited credentials.
+  - Leverages public embed and stream architectures to resolve track information without paid accounts or rate-limited credentials.
   - Matches audio against high-bitrate YouTube Music and multi-source streams with automated fallback logic.
 - **🏷️ Authentic Studio Metadata Tagging**:
   - Automatically embeds complete ID3 tags via Mutagen: Title, Artists, Album, Release Date, Track Numbering, and Disc Position.
@@ -45,7 +48,7 @@
 - **📑 Sequence-Preserving Playlist Cloning (`.m3u8`)**:
   - Generates `.m3u8` playlist files alongside your audio files so you can import playlists into VLC, Foobar2000, Apple Music, or mobile media players with exact sequence ordering.
 - **🎧 Built-in Studio HQ Audio Player**:
-  - Listen to 30-second Spotify previews before downloading.
+  - Listen to 30-second previews before downloading.
   - Once downloaded, click the **Glowing Green (HQ)** badge to stream the full studio-quality track directly from your local disk with waveform seek controls.
 - **🚀 Ultra-Fast Multi-Threaded Engine**:
   - Download up to 6 tracks simultaneously with staggered thread pooling and bot-proof rate-limit protections.
@@ -57,11 +60,10 @@
   - Filter by **All**, **Selected**, **Unselected**, **Downloaded**, or **Failed** with live count badges.
   - Full **Shift-Click range selection** and filter-scoped selection.
 - **🔗 Spotify Account Integration & 1-Click Library Downloads**:
-  - Connect your personal Spotify account via 1-click OAuth (PKCE) or access token.
+  - Connect your personal Spotify account via 1-click browser OAuth or access token.
   - Browse your entire Spotify library inside My-Music: personal playlists, collaborative collections, and **Liked Songs**.
-  - 1-click download any personal playlist or your entire Liked Songs collection directly without needing to copy-paste URLs.
 - **📋 Automatic Clipboard Detection**:
-  - Auto-detects copied Spotify links upon focusing the window for 1-click loading.
+  - Auto-detects copied Spotify, YouTube, JioSaavn, or Amazon Music links upon focusing the window for 1-click loading.
 
 ---
 

@@ -667,10 +667,17 @@ async function checkClipboardForSpotifyLink() {
     const text = (await navigator.clipboard.readText()).trim();
     if (!text) return;
 
-    const isSpotify = text.includes("open.spotify.com/") || text.startsWith("spotify:");
-    if (isSpotify && text !== state.lastClipboardChecked && (!state.currentPlaylist || text !== elements.playlistUrlInput.value.trim())) {
+    const isMusicLink = text.includes("spotify.com") || text.startsWith("spotify:") || text.includes("youtube.com") || text.includes("youtu.be") || text.includes("jiosaavn.com") || text.includes("saavn.com") || text.includes("music.amazon");
+    if (isMusicLink && text !== state.lastClipboardChecked && (!state.currentPlaylist || text !== elements.playlistUrlInput.value.trim())) {
       state.lastClipboardChecked = text;
       elements.clipboardUrlPreview.textContent = text;
+      const bannerTitle = elements.clipboardBanner.querySelector(".clipboard-title");
+      if (bannerTitle) {
+        if (text.includes("youtube") || text.includes("youtu.be")) bannerTitle.textContent = "YouTube Music link detected";
+        else if (text.includes("saavn")) bannerTitle.textContent = "JioSaavn link detected";
+        else if (text.includes("amazon")) bannerTitle.textContent = "Amazon Music link detected";
+        else bannerTitle.textContent = "Spotify link detected";
+      }
       elements.clipboardBanner.classList.remove("hidden");
       if (window.lucide) window.lucide.createIcons();
     }
@@ -891,7 +898,8 @@ async function pasteFromClipboard() {
       elements.btnClearUrl.classList.remove("hidden");
       if (elements.btnPasteClipboard) elements.btnPasteClipboard.classList.add("hidden");
       showToast("Pasted link from clipboard", "info");
-      if (text.includes("spotify.com") || text.includes("spotify:")) {
+      const isMusicLink = text.includes("spotify.com") || text.startsWith("spotify:") || text.includes("youtube.com") || text.includes("youtu.be") || text.includes("jiosaavn.com") || text.includes("saavn.com") || text.includes("music.amazon");
+      if (isMusicLink) {
         elements.fetchForm.requestSubmit();
       }
     } else {
@@ -913,7 +921,7 @@ function setLoadingState(isLoading) {
   } else {
     elements.btnFetch.disabled = false;
     elements.fetchSpinner.classList.add("hidden");
-    elements.btnFetch.querySelector(".btn-text").textContent = "Load Playlist";
+    elements.btnFetch.querySelector(".btn-text").textContent = "Load Music";
     if (elements.skeletonSection) elements.skeletonSection.classList.add("hidden");
   }
 }
@@ -930,7 +938,7 @@ async function fetchPlaylistData(url) {
 
     if (!res.ok) {
       const err = await res.json();
-      throw new Error(err.detail || "Could not retrieve playlist metadata.");
+      throw new Error(err.detail || "Could not retrieve music metadata.");
     }
 
     const data = await res.json();
@@ -940,7 +948,7 @@ async function fetchPlaylistData(url) {
     showToast(`Loaded "${data.title}" (${data.total_tracks} tracks)`, "success");
     return data;
   } catch (err) {
-    showToast("Error loading playlist: " + err.message, "error", 5000);
+    showToast("Error loading music: " + err.message, "error", 5000);
     return null;
   } finally {
     setLoadingState(false);
@@ -974,10 +982,11 @@ function renderPlaylistView(data) {
 
   // Populate Header
   elements.plCover.src = data.cover_url || "https://community.spotify.com/t5/image/serverpage/image-id/25294i2836BD1C1A311FFE/image-size/large?v=v2&px=999";
-  elements.plType.textContent = (data.type || "PLAYLIST").toUpperCase();
+  const badgePrefix = data.platform_badge ? `${data.platform_badge} • ` : "";
+  elements.plType.textContent = `${badgePrefix}${(data.type || "PLAYLIST").toUpperCase()}`;
   elements.plTitle.textContent = data.title;
   elements.plDesc.textContent = data.description || (data.author ? `Curated by ${data.author}` : "");
-  elements.plAuthor.textContent = data.author || "Spotify";
+  elements.plAuthor.textContent = data.author || "Curator";
   elements.plCount.textContent = data.total_tracks;
   elements.plDuration.textContent = data.total_duration_formatted;
 

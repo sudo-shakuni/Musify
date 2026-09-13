@@ -469,13 +469,17 @@ class DownloadManager:
 
                 temp_converted = os.path.join(output_dir, f"temp_{track_id}.{audio_format}")
 
-                # Multi-Strategy Search & Fallback Pipeline (YouTube + SoundCloud Bot-Proof Engine)
-                search_queries = [
+                # Multi-Strategy Search & Fallback Pipeline (Direct URL + YouTube + SoundCloud)
+                search_queries = []
+                direct_url = track.get("direct_url")
+                if direct_url and ("youtube.com" in direct_url or "youtu.be" in direct_url):
+                    search_queries.append(direct_url)
+                search_queries.extend([
                     f"ytsearch1:{track_artists} - {track_title} official audio",
                     f"scsearch1:{track_artists} - {track_title}",
                     f"ytsearch1:{track_artists} - {track_title}",
                     f"scsearch1:{track_title}",
-                ]
+                ])
 
                 download_success = False
                 for q in search_queries:

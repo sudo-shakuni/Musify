@@ -188,8 +188,8 @@
         </div>
 
         <div class="search-box-card">
-          <h1 class="search-headline">Download & Clone Any Playlist with My-Music</h1>
-          <p class="search-subhead">Studio-quality audio downloads with authentic ID3 tags, artist credits, album artwork, and .m3u8 playlist file.</p>
+          <h1 class="search-headline">Download Music from Any Platform with My-Music</h1>
+          <p class="search-subhead">Studio-quality audio downloads from Spotify, YouTube, JioSaavn & Amazon Music with authentic ID3 tags and cover artwork.</p>
           
           <form id="fetch-form" class="url-input-container">
             <div class="input-wrapper">
@@ -197,12 +197,12 @@
               <input 
                 type="text" 
                 id="playlist-url" 
-                placeholder="Paste Spotify playlist, album, or track URL (e.g. https://open.spotify.com/playlist/...)"
+                placeholder="Paste Spotify, YouTube, JioSaavn, or Amazon Music link..."
                 autocomplete="off"
-                aria-label="Spotify playlist, album, or track URL"
+                aria-label="Spotify, YouTube, JioSaavn, or Amazon Music link"
                 required
               />
-              <button type="button" id="btn-paste-clipboard" class="btn-input-action" title="Paste Spotify URL from Clipboard">
+              <button type="button" id="btn-paste-clipboard" class="btn-input-action" title="Paste Music URL from Clipboard">
                 <i data-lucide="clipboard"></i> Paste
               </button>
               <button type="button" id="btn-clear-url" class="btn-clear hidden" title="Clear">
@@ -210,16 +210,24 @@
               </button>
             </div>
             <button type="submit" id="btn-fetch" class="btn btn-primary">
-              <span class="btn-text">Load Playlist</span>
+              <span class="btn-text">Load Music</span>
               <div class="spinner hidden" id="fetch-spinner"></div>
             </button>
           </form>
 
-          <div class="quick-examples">
+          <div class="supported-platforms-bar" style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; align-items: center; font-size: 0.8rem; color: #888;">
+            <span style="font-weight: 600;">Supported:</span>
+            <span class="platform-chip" style="background: rgba(29, 185, 84, 0.15); color: #1ed760; border: 1px solid rgba(29, 185, 84, 0.3); padding: 3px 10px; border-radius: 12px; font-weight: 500;">🟢 Spotify</span>
+            <span class="platform-chip" style="background: rgba(255, 0, 0, 0.15); color: #ff5555; border: 1px solid rgba(255, 0, 0, 0.3); padding: 3px 10px; border-radius: 12px; font-weight: 500;">🔴 YouTube & YT Music</span>
+            <span class="platform-chip" style="background: rgba(0, 168, 225, 0.15); color: #00b4f0; border: 1px solid rgba(0, 168, 225, 0.3); padding: 3px 10px; border-radius: 12px; font-weight: 500;">🔵 JioSaavn</span>
+            <span class="platform-chip" style="background: rgba(255, 153, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 153, 0, 0.3); padding: 3px 10px; border-radius: 12px; font-weight: 500;">🟠 Amazon Music</span>
+          </div>
+
+          <div class="quick-examples" style="margin-top: 12px;">
             <span>Quick samples:</span>
-            <button type="button" class="btn-chip" data-url="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M">🔥 Today's Top Hits</button>
-            <button type="button" class="btn-chip" data-url="https://open.spotify.com/album/4m2880jivSbbyEGAKfITCa">💿 Daft Punk - RAM</button>
-            <button type="button" class="btn-chip" data-url="https://open.spotify.com/playlist/37i9dQZF1DX4t95PaoR1T0">☕ Chill Lofi Beats</button>
+            <button type="button" class="btn-chip" data-url="https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M">🟢 Spotify Top Hits</button>
+            <button type="button" class="btn-chip" data-url="https://www.youtube.com/watch?v=kJQP7kiw5Fk">🔴 YouTube (Despacito)</button>
+            <button type="button" class="btn-chip" data-url="https://www.jiosaavn.com/album/kesariya-lofi-flip/Oi120RPXw-E_">🔵 JioSaavn (Kesariya)</button>
           </div>
 
           <!-- Recent Playlists History -->
